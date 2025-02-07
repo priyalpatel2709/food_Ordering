@@ -9,6 +9,7 @@ const {
   restaurantRouters,
   discountRouters,
   taxRouters,
+  customizationOptionRoute,
 } = require("./routes");
 dotenv.config();
 
@@ -26,10 +27,16 @@ app.get("/", (req, resp) => {
   resp.send(htmlContent);
 });
 
+//user
 app.use("/api/v1/user", userRouters);
+
+//restaurant
 app.use("/api/v1/restaurant", restaurantRouters);
 app.use("/api/v1/discount", discountRouters);
 app.use("/api/v1/tax", taxRouters);
+
+//menu
+app.use("/api/v1/customizationOption", customizationOptionRoute);
 
 app.use(notFound);
 app.use(errorHandler);

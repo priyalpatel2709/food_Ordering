@@ -4,6 +4,7 @@ const {
   getCustomizationOptionModel,
   getItemModel,
   getMenuModel,
+  getCategoryModel,
 } = require("./menu/index");
 
 const {
@@ -20,4 +21,5 @@ module.exports = {
   getMenuModel,
   getDiscountModel,
   getTaxModel,
+  getCategoryModel,
 };

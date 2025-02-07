@@ -3,8 +3,7 @@ const mongoose = require("mongoose");
 const itemSchema = new mongoose.Schema(
   {
     restaurantId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Restaurant",
+      type: String,
       required: true,
     },
     categoryId: {
