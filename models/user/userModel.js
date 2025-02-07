@@ -10,7 +10,7 @@ const userModel = new mongoose.Schema(
 
     password: { type: String },
     deviceToken: { type: String, default: "" },
-    restaurantsId: { type: String,  },
+    restaurantsId: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     age: { type: Number },
     address: [
@@ -23,7 +23,7 @@ const userModel = new mongoose.Schema(
         addressType: { type: String },
       },
     ],
-    roleName: { type: String,  },
+    roleName: { type: String },
     access: [{ type: String }],
     metaData: [
       {

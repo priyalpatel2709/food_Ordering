@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
-const generateToken = require("../config/generateToken");
-const crudOperations = require("../utils/crudOperations");
-const { getUserModel } = require("../models");
+const generateToken = require("../../config/generateToken");
+const crudOperations = require("../../utils/crudOperations");
+const { getUserModel } = require("../../models");
 const createError = require("http-errors");
 
 const registerUser = asyncHandler(async (req, res, next) => {
@@ -62,6 +62,7 @@ const authUser = asyncHandler(async (req, res) => {
     name: user.name,
     email: user.email,
     token: generateToken(user._id),
+    restaurantsId: user.restaurantsId,
   });
 });
 

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const identifyTenant = require("../middleware/IdentificationMiddleware");
-const { protect } = require("../middleware/authMiddleware");
+const identifyTenant = require("../../middleware/IdentificationMiddleware");
+const { protect } = require("../../middleware/authMiddleware");
 
 const {
   authUser,
@@ -9,14 +9,14 @@ const {
   deleteById,
   getAllUsers,
   getUsersByRestaurantsId,
-} = require("../controllers/userController");
+} = require("../../controllers/user/userController");
 
 router.post("/", identifyTenant, registerUser);
 router.post("/login", identifyTenant, authUser);
 router.delete("/:id", identifyTenant, protect, deleteById);
 router.get("/allUsers", identifyTenant, protect, getAllUsers);
 router.get(
-  "/byRestaurantsId/:restaurantsId",
+  "/restaurant/:restaurantsId",
   identifyTenant,
   protect,
   getUsersByRestaurantsId

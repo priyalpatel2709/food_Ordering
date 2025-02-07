@@ -28,10 +28,10 @@ const connectToDatabase = async (restaurantsId) => {
     return connections[restaurantsId];
   }
 
-  const uri = `mongodb://localhost:27017/restaurant__${restaurantsId}`;
-  // const connection = mongoose.createConnection(uri);
+  const uri = `mongodb://localhost:27017/restaurant_${restaurantsId}`;
+  const connection = mongoose.createConnection(uri);
 
-  const connection = mongoose.createConnection(getDatabaseUri(restaurantsId));
+  // const connection = mongoose.createConnection(getDatabaseUri(restaurantsId));
   
   console.log(`Connected to DB for restaurant ${restaurantsId}`.underline.bgGreen);
   connections[restaurantsId] = connection;

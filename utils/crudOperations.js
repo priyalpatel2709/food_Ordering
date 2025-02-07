@@ -67,7 +67,6 @@ const crudOperations = (models) => {
         const savedDocument = await newDocument.save();
         res.status(201).json(savedDocument);
       } catch (err) {
-        console.log("File: crudOperations.js", "Line 70:", err.message);
         next(
           createError(500, "Error creating document", { error: err.message })
         );
