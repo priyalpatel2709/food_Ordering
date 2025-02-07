@@ -8,6 +8,7 @@ const {
   customizationOptionRoute,
   categoryRoute,
   itemRoute,
+  menuRoute,
 } = require("./menu/index");
 
 module.exports = {
@@ -18,4 +19,5 @@ module.exports = {
   customizationOptionRoute,
   categoryRoute,
   itemRoute,
+  menuRoute,
 };

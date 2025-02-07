@@ -12,6 +12,7 @@ const {
   customizationOptionRoute,
   categoryRoute,
   itemRoute,
+  menuRoute,
 } = require("./routes");
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use("/api/v1/tax", taxRouters);
 app.use("/api/v1/customizationOption", customizationOptionRoute);
 app.use("/api/v1/category", categoryRoute);
 app.use("/api/v1/item", itemRoute);
+app.use("/api/v1/menu", menuRoute);
 
 app.use(notFound);
 app.use(errorHandler);

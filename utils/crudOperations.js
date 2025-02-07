@@ -21,13 +21,13 @@ const populateNestedFields = (query, populateFields) => {
 
 // CRUD operations generator function
 const crudOperations = (models) => {
-  const { mainModel, populateModels = [] } = models;
+  const { mainModel, populateModels = [], select } = models;
 
   return {
     // Get all documents
     getAll: async (req, res, next) => {
       try {
-        let query = mainModel.find({});
+        let query = mainModel.find({}).select(select);
         query = await populateNestedFields(query, populateModels);
         const documents = await query;
         res.status(200).json(documents);
@@ -40,7 +40,7 @@ const crudOperations = (models) => {
     // Get document by ID
     getById: async (req, res, next) => {
       try {
-        let query = mainModel.findById(req.params.id);
+        let query = mainModel.findById(req.params.id).select(select);
         query = await populateNestedFields(query, populateModels);
         const document = await query;
         if (document) {
@@ -68,7 +68,10 @@ const crudOperations = (models) => {
         res.status(201).json(savedDocument);
       } catch (err) {
         next(
-          createError(500, "Error creating document", { error: err.message })
+          createError(500, "Error creating document", {
+            errorMessage: err.message,
+            err: err,
+          })
         );
       }
     },
