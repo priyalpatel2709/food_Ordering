@@ -4,7 +4,12 @@ const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
-const { userRouters, restaurantRouters } = require("./routes");
+const {
+  userRouters,
+  restaurantRouters,
+  discountRouters,
+  taxRouters,
+} = require("./routes");
 dotenv.config();
 
 const app = express();
@@ -23,6 +28,8 @@ app.get("/", (req, resp) => {
 
 app.use("/api/v1/user", userRouters);
 app.use("/api/v1/restaurant", restaurantRouters);
+app.use("/api/v1/discount", discountRouters);
+app.use("/api/v1/tax", taxRouters);
 
 app.use(notFound);
 app.use(errorHandler);

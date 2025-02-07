@@ -4,16 +4,16 @@ const identifyTenant = require("../../middleware/IdentificationMiddleware");
 const { protect } = require("../../middleware/authMiddleware");
 
 const {
-  createRestaurant,
-  getRestaurantById,
-  getAllRestaurants,
+  createTax,
+  getTaxById,
+  getAllTaxes,
   deleteById,
   updateById,
-} = require("../../controllers/restaurant/restaurantController");
+} = require("../../controllers/restaurant/taxController");
 
-router.post("/createRestaurant", identifyTenant, protect, createRestaurant);
-router.get("/allRestaurant", identifyTenant, protect, getAllRestaurants);
-router.get("/:id", identifyTenant, protect, getRestaurantById);
+router.post("/createTax", identifyTenant, protect, createTax);
+router.get("/", identifyTenant, protect, getAllTaxes);
+router.get("/:id", identifyTenant, protect, getTaxById);
 router.delete("/:id", identifyTenant, protect, deleteById);
 router.put("/:id", identifyTenant, protect, updateById);
 

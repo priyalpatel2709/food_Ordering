@@ -2,13 +2,20 @@ const mongoose = require("mongoose");
 
 const taxSchema = new mongoose.Schema(
   {
-    restaurantId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Restaurant",
-      required: true,
-    },
+    restaurantId: { type: String, required: true },
     name: { type: String, required: true }, // Example: "VAT"
-    percentage: { type: Number, required: true, min: 0 }, // Tax percentage
+    percentage: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 100,
+      validate: {
+        validator: function (v) {
+          return /^\d{1,2}(\.\d{1,4})?$/.test(v.toString()); // Allows up to 4 decimal places
+        },
+        message: (props) => `${props.value} is not a valid percentage!`,
+      },
+    }, // Tax percentage
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
