@@ -10,6 +10,12 @@ const categorySchema = new mongoose.Schema(
     description: { type: String },
     isActive: { type: Boolean, default: true },
     displayOrder: { type: Number }, // Sorting order
+    metaData: [
+      {
+        key: { type: String },
+        value: mongoose.Schema.Types.Mixed,
+      },
+    ],
   },
   { timestamps: true }
 );

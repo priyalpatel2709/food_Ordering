@@ -33,6 +33,12 @@ const restaurantModel = new mongoose.Schema(
     acceptsOnlineOrders: { type: Boolean, default: false },
     acceptsReservations: { type: Boolean, default: false },
     paymentMethods: [{ type: String }],
+    metaData: [
+      {
+        key: { type: String },
+        value: mongoose.Schema.Types.Mixed,
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -17,6 +17,12 @@ const taxSchema = new mongoose.Schema(
       },
     }, // Tax percentage
     isActive: { type: Boolean, default: true },
+    metaData: [
+      {
+        key: { type: String },
+        value: mongoose.Schema.Types.Mixed,
+      },
+    ],
   },
   { timestamps: true }
 );

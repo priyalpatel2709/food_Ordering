@@ -9,6 +9,12 @@ const customizationOptionSchema = new mongoose.Schema(
     name: { type: String, required: true }, // Example: "Extra Cheese"
     price: { type: Number, default: 0, min: 0 }, // Additional price for customization
     isActive: { type: Boolean, default: true },
+    metaData: [
+      {
+        key: { type: String },
+        value: mongoose.Schema.Types.Mixed,
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -23,6 +23,12 @@ const itemSchema = new mongoose.Schema(
     customizationOptions: [
       { type: mongoose.Schema.Types.ObjectId, ref: "CustomizationOption" },
     ],
+    metaData: [
+      {
+        key: { type: String },
+        value: mongoose.Schema.Types.Mixed,
+      },
+    ],
   },
   { timestamps: true }
 );

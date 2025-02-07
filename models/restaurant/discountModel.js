@@ -8,6 +8,12 @@ const discountSchema = new mongoose.Schema(
     validFrom: { type: Date }, // Start date of discount
     validTo: { type: Date }, // End date of discount
     isActive: { type: Boolean, default: true },
+    metaData: [
+      {
+        key: { type: String },
+        value: mongoose.Schema.Types.Mixed,
+      },
+    ],
   },
   { timestamps: true }
 );

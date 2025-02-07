@@ -27,6 +27,12 @@ const menuSchema = new mongoose.Schema(
     categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
     taxes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tax" }],
     discounts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Discount" }],
+    metaData: [
+      {
+        key: { type: String },
+        value: mongoose.Schema.Types.Mixed,
+      },
+    ],
   },
   { timestamps: true }
 );
