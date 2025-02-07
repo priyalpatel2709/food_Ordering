@@ -4,7 +4,11 @@ const {
   taxRouters,
 } = require("./restaurant/index");
 const { userRouters } = require("./user/index");
-const { customizationOptionRoute, categoryRoute } = require("./menu/index");
+const {
+  customizationOptionRoute,
+  categoryRoute,
+  itemRoute,
+} = require("./menu/index");
 
 module.exports = {
   userRouters,
@@ -13,4 +17,5 @@ module.exports = {
   taxRouters,
   customizationOptionRoute,
   categoryRoute,
+  itemRoute,
 };
