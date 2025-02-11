@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const identifyTenant = require("../../middleware/IdentificationMiddleware");
-const { protect } = require("../../middleware/authMiddleware");
+const {
+  identifyTenant,
+  protect,
+  queryHandler,
+} = require("../../middleware/index");
 
 const {
   createMenu,
@@ -12,7 +15,7 @@ const {
 } = require("../../controllers/menu/menuController");
 
 router.post("/createMenu", identifyTenant, protect, createMenu);
-router.get("/", identifyTenant, protect, getAllMenus);
+router.get("/", identifyTenant, protect, queryHandler, getAllMenus);
 router.get("/:id", identifyTenant, protect, getMenuById);
 router.delete("/:id", identifyTenant, protect, deleteById);
 router.put("/:id", identifyTenant, protect, updateById);

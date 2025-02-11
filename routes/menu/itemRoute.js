@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const identifyTenant = require("../../middleware/IdentificationMiddleware");
-const { protect } = require("../../middleware/authMiddleware");
+
+const {
+  identifyTenant,
+  protect,
+  queryHandler,
+} = require("../../middleware/index");
 
 const {
   createItem,
@@ -12,8 +16,8 @@ const {
 } = require("../../controllers/menu/itemController");
 
 router.post("/createItem", identifyTenant, protect, createItem);
-router.get("/", identifyTenant, protect, getAllItems);
-router.get("/:id", identifyTenant, protect, getItemById);
+router.get("/", identifyTenant, queryHandler, protect, getAllItems);
+router.get("/:id", identifyTenant, queryHandler, protect, getItemById);
 router.delete("/:id", identifyTenant, protect, deleteById);
 router.put("/:id", identifyTenant, protect, updateById);
 

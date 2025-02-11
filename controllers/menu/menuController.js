@@ -15,17 +15,35 @@ const createMenu = asyncHandler(async (req, res, next) => {
   menuOperations.create(req, res, next);
 });
 
-const getAllMenus = asyncHandler(async (req, res, next) => { // need to work on this
-  const { menu, categories, items, inItems } = req.query;
+const getAllMenus = asyncHandler(async (req, res, next) => {
+  // need to work on this
+
   const Menu = getMenuModel(req.restaurantDb);
   const Category = getCategoryModel(req.restaurantDb);
   const Item = getItemModel(req.restaurantDb);
 
-  console.log("Categories Query:", items);
+  console.log('File: menuController.js', 'Line 25:', getQueryParams(req.queryOptions?.select?.items));
 
   const menuOperations = crudOperations({
     mainModel: Menu,
-    select: getQueryParams(menu),
+    populateModels: [
+      {
+        field: "categories",
+        model: Category,
+        select: getQueryParams(req.queryOptions?.select?.category),
+      },
+      {
+        field: "items.itemId",
+        model: Item,
+        select: getQueryParams(req.queryOptions?.select?.item),
+      },
+      // {
+      //   field: "taxRate",
+      //   model: TaxRate,
+      //   select: getQueryParams(req.queryOptions?.select?.taxRate),
+      // },
+    ],
+    select: getQueryParams(req.queryOptions?.select?.items),
   });
 
   menuOperations.getAll(req, res, next);

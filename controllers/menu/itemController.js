@@ -22,25 +22,23 @@ const getAllItems = asyncHandler(async (req, res, next) => {
   const CustomizationOptions = getCustomizationOptionModel(req.restaurantDb);
   const TaxRate = getTaxModel(req.restaurantDb);
 
-  const { category, customizationOptions, taxRate } = req.query;
-
   const itemOperations = crudOperations({
     mainModel: Item,
     populateModels: [
       {
         field: "category",
         model: Category,
-        select: getQueryParams(category),
+        select: getQueryParams(req.queryOptions?.select?.category),
       },
       {
         field: "customizationOptions",
         model: CustomizationOptions,
-        select: getQueryParams(customizationOptions),
+        select: getQueryParams(req.queryOptions?.select?.customizationOptions),
       },
       {
         field: "taxRate",
         model: TaxRate,
-        select: getQueryParams(taxRate),
+        select: getQueryParams(req.queryOptions?.select?.taxRate),
       },
     ],
   });
@@ -52,24 +50,24 @@ const getItemById = asyncHandler(async (req, res, next) => {
   const Category = getCategoryModel(req.restaurantDb);
   const CustomizationOptions = getCustomizationOptionModel(req.restaurantDb);
   const TaxRate = getTaxModel(req.restaurantDb);
-  const { category, customizationOptions, taxRate } = req.query;
+
   const itemOperations = crudOperations({
     mainModel: Item,
     populateModels: [
       {
         field: "category",
         model: Category,
-        select: getQueryParams(category),
+        select: getQueryParams(req.queryOptions?.select?.category),
       },
       {
         field: "customizationOptions",
         model: CustomizationOptions,
-        select: getQueryParams(customizationOptions),
+        select: getQueryParams(req.queryOptions?.select?.customizationOptions),
       },
       {
         field: "taxRate",
         model: TaxRate,
-        select: getQueryParams(taxRate),
+        select: getQueryParams(req.queryOptions?.select?.taxRate),
       },
     ],
   });
@@ -91,8 +89,6 @@ const updateById = asyncHandler(async (req, res, next) => {
   });
   itemOperations.updateById(req, res, next);
 });
-
-
 
 module.exports = {
   createItem,
