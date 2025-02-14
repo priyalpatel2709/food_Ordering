@@ -16,7 +16,7 @@ const {
 
 router.post("/createMenu", identifyTenant, protect, createMenu);
 router.get("/", identifyTenant, protect, queryHandler, getAllMenus);
-router.get("/:id", identifyTenant, protect, getMenuById);
+router.get("/:id", identifyTenant, protect, queryHandler, getMenuById);
 router.delete("/:id", identifyTenant, protect, deleteById);
 router.put("/:id", identifyTenant, protect, updateById);
 

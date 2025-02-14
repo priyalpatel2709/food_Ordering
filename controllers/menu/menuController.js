@@ -4,6 +4,7 @@ const {
   getMenuModel,
   getCategoryModel,
   getItemModel,
+  getTaxModel,
 } = require("../../models/index");
 const { getQueryParams } = require("../../utils/utils");
 
@@ -21,8 +22,7 @@ const getAllMenus = asyncHandler(async (req, res, next) => {
   const Menu = getMenuModel(req.restaurantDb);
   const Category = getCategoryModel(req.restaurantDb);
   const Item = getItemModel(req.restaurantDb);
-
-  console.log('File: menuController.js', 'Line 25:', getQueryParams(req.queryOptions?.select?.items));
+  const TaxRate = getTaxModel(req.restaurantDb);
 
   const menuOperations = crudOperations({
     mainModel: Menu,
@@ -37,13 +37,12 @@ const getAllMenus = asyncHandler(async (req, res, next) => {
         model: Item,
         select: getQueryParams(req.queryOptions?.select?.item),
       },
-      // {
-      //   field: "taxRate",
-      //   model: TaxRate,
-      //   select: getQueryParams(req.queryOptions?.select?.taxRate),
-      // },
+      {
+        field: "taxes",
+        model: TaxRate,
+        select: getQueryParams(req.queryOptions?.select?.taxRate),
+      },
     ],
-    select: getQueryParams(req.queryOptions?.select?.items),
   });
 
   menuOperations.getAll(req, res, next);
@@ -51,8 +50,29 @@ const getAllMenus = asyncHandler(async (req, res, next) => {
 
 const getMenuById = asyncHandler(async (req, res, next) => {
   const Menu = getMenuModel(req.restaurantDb);
+  const Category = getCategoryModel(req.restaurantDb);
+  const Item = getItemModel(req.restaurantDb);
+  const TaxRate = getTaxModel(req.restaurantDb);
+
   const menuOperations = crudOperations({
     mainModel: Menu,
+    populateModels: [
+      {
+        field: "categories",
+        model: Category,
+        select: getQueryParams(req.queryOptions?.select?.category),
+      },
+      {
+        field: "items.itemId",
+        model: Item,
+        select: getQueryParams(req.queryOptions?.select?.item),
+      },
+      {
+        field: "taxes",
+        model: TaxRate,
+        select: getQueryParams(req.queryOptions?.select?.taxRate),
+      },
+    ],
   });
   menuOperations.getById(req, res, next);
 });

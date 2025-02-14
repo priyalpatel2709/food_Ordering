@@ -49,6 +49,7 @@ const crudOperations = (models) => {
           next(createError(404, "Document not found"));
         }
       } catch (err) {
+        console.log("File: crudOperations.js", "Line 52:", err);
         next(createError(500, "Error fetching data", { error: err.message }));
       }
     },

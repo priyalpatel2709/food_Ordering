@@ -14,8 +14,6 @@ const asyncHandler = require("express-async-handler");
 const queryHandler = asyncHandler(async (req, res, next) => {
   const { select, expand, ...query } = req.query;
 
-  console.log("File: queryHandler.js", "Line 17:", expand);
-
   try {
     req.queryOptions = {
       select: parseQueryString(select),

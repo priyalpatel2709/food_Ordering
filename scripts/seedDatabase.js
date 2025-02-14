@@ -236,28 +236,50 @@ const seedDatabase = async () => {
 
     const itemsV2 = await Item.find({}, "_id");
     await Menu.insertMany([
-      {
-        restaurantId: "restaurant_123",
-        name: "Lunch Special",
-        description: "Available from 12 PM - 3 PM",
-        isActive: true,
-        availableDays: [
-          {
-            day: "Monday",
-            timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
-          },
-          {
-            day: "Tuesday",
-            timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
-          },
-        ],
-        categories: categories.map((cat) => cat._id),
-        items: itemsV2.slice(0, 10).map((item) => ({
-          itemId: item._id,
-          defaultPrice: 10,
-        })),
-        taxes: ["67a5c841986379debc2b8e4e"],
-      },
+      // {
+      //   restaurantId: "restaurant_123",
+      //   name: "Lunch Special",
+      //   description: "Available from 12 PM - 3 PM",
+      //   isActive: true,
+      //   availableDays: [
+      //     {
+      //       day: "Monday",
+      //       timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
+      //     },
+      //     {
+      //       day: "Tuesday",
+      //       timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
+      //     },
+      //   ],
+      //   categories: categories.map((cat) => cat._id),
+      //   items: itemsV2.slice(0, 10).map((item) => ({
+      //     itemId: item._id,
+      //     defaultPrice: 10,
+      //   })),
+      //   taxes: ["67a5c841986379debc2b8e4e"],
+      // },
+      // {
+      //   restaurantId: "restaurant_123",
+      //   name: "Dinner Special",
+      //   description: "Available from 6 PM - 10 PM",
+      //   isActive: true,
+      //   availableDays: [
+      //     {
+      //       day: "Friday",
+      //       timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+      //     },
+      //     {
+      //       day: "Saturday",
+      //       timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+      //     },
+      //   ],
+      //   categories: categories.map((cat) => cat._id),
+      //   items: itemsV2.slice(10, 20).map((item) => ({
+      //     itemId: item._id,
+      //     defaultPrice: 15,
+      //   })),
+      //   taxes: ["67a5c841986379debc2b8e4e"],
+      // },
       {
         restaurantId: "restaurant_123",
         name: "Dinner Special",
@@ -265,12 +287,116 @@ const seedDatabase = async () => {
         isActive: true,
         availableDays: [
           {
+            day: "Monday",
+            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+          },
+          {
+            day: "Tuesday",
+            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+          },
+          {
+            day: "Wednesday",
+            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+          },
+          {
+            day: "Thursday",
+            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+          },
+          {
             day: "Friday",
             timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
           },
           {
             day: "Saturday",
             timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+          },
+          {
+            day: "Sunday",
+            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+          },
+        ],
+        categories: categories.map((cat) => cat._id),
+        items: itemsV2.slice(10, 20).map((item) => ({
+          itemId: item._id,
+          defaultPrice: 15,
+        })),
+        taxes: ["67a5c841986379debc2b8e4e"],
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Lunch Special",
+        description: "Available from 2 PM - 6 PM",
+        isActive: true,
+        availableDays: [
+          {
+            day: "Monday",
+            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
+          },
+          {
+            day: "Tuesday",
+            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
+          },
+          {
+            day: "Wednesday",
+            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
+          },
+          {
+            day: "Thursday",
+            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
+          },
+          {
+            day: "Friday",
+            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
+          },
+          {
+            day: "Saturday",
+            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
+          },
+          {
+            day: "Sunday",
+            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
+          },
+        ],
+        categories: categories.map((cat) => cat._id),
+        items: itemsV2.slice(10, 20).map((item) => ({
+          itemId: item._id,
+          defaultPrice: 15,
+        })),
+        taxes: ["67a5c841986379debc2b8e4e"],
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Morning Special",
+        description: "Available from 9 AM - 2 PM",
+        isActive: true,
+        availableDays: [
+          {
+            day: "Monday",
+            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
+          },
+          {
+            day: "Tuesday",
+            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
+          },
+          {
+            day: "Wednesday",
+            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
+          },
+          {
+            day: "Thursday",
+            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
+          },
+          {
+            day: "Friday",
+            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
+          },
+          {
+            day: "Saturday",
+            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
+          },
+          {
+            day: "Sunday",
+            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
           },
         ],
         categories: categories.map((cat) => cat._id),
