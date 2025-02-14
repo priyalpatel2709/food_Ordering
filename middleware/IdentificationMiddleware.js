@@ -6,6 +6,11 @@ const identifyTenant = async (req, res, next) => {
     req.header("X-Restaurant-Id") ||
     req.query.restaurantsId;
 
+  let isUserRequire =
+    req.body.restaurantsId ||
+    req.header("X-isUserRequire") ||
+    req.query.restaurantsId;
+
   // Default to "Users" database if no restaurantsId is provided and base URL is "/user"
   if (!restaurantsId && req.baseUrl === "/api/v1/user") {
     restaurantsId = "Users";
@@ -18,7 +23,9 @@ const identifyTenant = async (req, res, next) => {
 
   try {
     // Connect to the "Users" database
-    req.usersDb = await connectToDatabase("Users");
+    if (isUserRequire != "false") {
+      req.usersDb = await connectToDatabase("Users");
+    }
 
     // Connect to the specified school database if restaurantsId is not "Users"
     if (restaurantsId !== "Users") {

@@ -253,7 +253,7 @@ const seedDatabase = async () => {
       //   ],
       //   categories: categories.map((cat) => cat._id),
       //   items: itemsV2.slice(0, 10).map((item) => ({
-      //     itemId: item._id,
+      //     item: item._id,
       //     defaultPrice: 10,
       //   })),
       //   taxes: ["67a5c841986379debc2b8e4e"],
@@ -266,143 +266,223 @@ const seedDatabase = async () => {
       //   availableDays: [
       //     {
       //       day: "Friday",
-      //       timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
       //     },
       //     {
       //       day: "Saturday",
-      //       timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
       //     },
       //   ],
       //   categories: categories.map((cat) => cat._id),
       //   items: itemsV2.slice(10, 20).map((item) => ({
-      //     itemId: item._id,
+      //     item: item._id,
+      //     defaultPrice: 15,
+      //   })),
+      //   taxes: ["67a5c841986379debc2b8e4e"],
+      // },
+
+      // {
+      //   restaurantId: "restaurant_123",
+      //   name: "Dinner Special",
+      //   description: "Available from 6 PM - 10 PM",
+      //   isActive: true,
+      //   availableDays: [
+      //     {
+      //       day: "Monday",
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+      //     },
+      //     {
+      //       day: "Tuesday",
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+      //     },
+      //     {
+      //       day: "Wednesday",
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+      //     },
+      //     {
+      //       day: "Thursday",
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+      //     },
+      //     {
+      //       day: "Friday",
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+      //     },
+      //     {
+      //       day: "Saturday",
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+      //     },
+      //     {
+      //       day: "Sunday",
+      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+      //     },
+      //   ],
+      //   categories: categories.map((cat) => cat._id),
+      //   items: itemsV2.slice(10, 20).map((item) => ({
+      //     item: item._id,
+      //     defaultPrice: 15,
+      //   })),
+      //   taxes: ["67a5c841986379debc2b8e4e"],
+      // },
+      // {
+      //   restaurantId: "restaurant_123",
+      //   name: "Lunch Special",
+      //   description: "Available from 2 PM - 6 PM",
+      //   isActive: true,
+      //   availableDays: [
+      //     {
+      //       day: "Monday",
+      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+      //     },
+      //     {
+      //       day: "Tuesday",
+      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+      //     },
+      //     {
+      //       day: "Wednesday",
+      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+      //     },
+      //     {
+      //       day: "Thursday",
+      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+      //     },
+      //     {
+      //       day: "Friday",
+      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+      //     },
+      //     {
+      //       day: "Saturday",
+      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+      //     },
+      //     {
+      //       day: "Sunday",
+      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+      //     },
+      //   ],
+      //   categories: categories.map((cat) => cat._id),
+      //   items: itemsV2.slice(10, 20).map((item) => ({
+      //     item: item._id,
+      //     defaultPrice: 15,
+      //   })),
+      //   taxes: ["67a5c841986379debc2b8e4e"],
+      // },
+      // {
+      //   restaurantId: "restaurant_123",
+      //   name: "Morning Special",
+      //   description: "Available from 9 AM - 2 PM",
+      //   isActive: true,
+      //   availableDays: [
+      //     {
+      //       day: "Monday",
+      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+      //     },
+      //     {
+      //       day: "Tuesday",
+      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+      //     },
+      //     {
+      //       day: "Wednesday",
+      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+      //     },
+      //     {
+      //       day: "Thursday",
+      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+      //     },
+      //     {
+      //       day: "Friday",
+      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+      //     },
+      //     {
+      //       day: "Saturday",
+      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+      //     },
+      //     {
+      //       day: "Sunday",
+      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+      //     },
+      //   ],
+      //   categories: categories.map((cat) => cat._id),
+      //   items: itemsV2.slice(10, 20).map((item) => ({
+      //     item: item._id,
       //     defaultPrice: 15,
       //   })),
       //   taxes: ["67a5c841986379debc2b8e4e"],
       // },
       {
         restaurantId: "restaurant_123",
-        name: "Dinner Special",
-        description: "Available from 6 PM - 10 PM",
+        name: "Sample Restaurant Menu",
+        description: "A diverse selection of delicious meals.",
         isActive: true,
         availableDays: [
           {
             day: "Monday",
-            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+            timeSlots: [{ openTime: "08:00", closeTime: "08:59" }],
           },
           {
             day: "Tuesday",
-            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+            timeSlots: [{ openTime: "08:00", closeTime: "08:59" }],
           },
           {
             day: "Wednesday",
-            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+            timeSlots: [{ openTime: "08:00", closeTime: "08:59" }],
           },
           {
             day: "Thursday",
-            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+            timeSlots: [{ openTime: "08:00", closeTime: "08:59" }],
           },
           {
             day: "Friday",
-            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+            timeSlots: [{ openTime: "08:00", closeTime: "08:59" }],
           },
           {
             day: "Saturday",
-            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+            timeSlots: [{ openTime: "08:00", closeTime: "08:59" }],
           },
           {
             day: "Sunday",
-            timeSlots: [{ openTime: "6:00 PM", closeTime: "10:00 PM" }],
+            timeSlots: [{ openTime: "08:00", closeTime: "08:59" }],
           },
         ],
         categories: categories.map((cat) => cat._id),
         items: itemsV2.slice(10, 20).map((item) => ({
-          itemId: item._id,
-          defaultPrice: 15,
-        })),
-        taxes: ["67a5c841986379debc2b8e4e"],
-      },
-      {
-        restaurantId: "restaurant_123",
-        name: "Lunch Special",
-        description: "Available from 2 PM - 6 PM",
-        isActive: true,
-        availableDays: [
-          {
-            day: "Monday",
-            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
+          item: item._id,
+          // defaultPrice: 15,
+          timeBasedPricing: [
+            {
+              days: ["Monday", "Tuesday"],
+              startTime: "14:00",
+              endTime: "18:00",
+              price: 12.99,
+            },
+          ],
+          specialEventPricing: [
+            {
+              event: "Christmas",
+              date: "2025-12-25",
+              priceMultiplier: 1.5,
+            },
+          ],
+          membershipPricing: [
+            {
+              membershipLevel: "Gold",
+              price: 13.49,
+            },
+          ],
+          bulkPricing: [
+            {
+              minQuantity: 5,
+              discountPercentage: 10,
+            },
+          ],
+          locationPricing: [
+            {
+              location: "New York",
+              price: 16.99,
+            },
+          ],
+          availabilityHours: {
+            startTime: "10:00",
+            endTime: "21:00",
           },
-          {
-            day: "Tuesday",
-            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
-          },
-          {
-            day: "Wednesday",
-            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
-          },
-          {
-            day: "Thursday",
-            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
-          },
-          {
-            day: "Friday",
-            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
-          },
-          {
-            day: "Saturday",
-            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
-          },
-          {
-            day: "Sunday",
-            timeSlots: [{ openTime: "2:00 PM", closeTime: "6:00 PM" }],
-          },
-        ],
-        categories: categories.map((cat) => cat._id),
-        items: itemsV2.slice(10, 20).map((item) => ({
-          itemId: item._id,
-          defaultPrice: 15,
-        })),
-        taxes: ["67a5c841986379debc2b8e4e"],
-      },
-      {
-        restaurantId: "restaurant_123",
-        name: "Morning Special",
-        description: "Available from 9 AM - 2 PM",
-        isActive: true,
-        availableDays: [
-          {
-            day: "Monday",
-            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
-          },
-          {
-            day: "Tuesday",
-            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
-          },
-          {
-            day: "Wednesday",
-            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
-          },
-          {
-            day: "Thursday",
-            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
-          },
-          {
-            day: "Friday",
-            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
-          },
-          {
-            day: "Saturday",
-            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
-          },
-          {
-            day: "Sunday",
-            timeSlots: [{ openTime: "9:00 AM", closeTime: "2:00 PM" }],
-          },
-        ],
-        categories: categories.map((cat) => cat._id),
-        items: itemsV2.slice(10, 20).map((item) => ({
-          itemId: item._id,
-          defaultPrice: 15,
         })),
         taxes: ["67a5c841986379debc2b8e4e"],
       },

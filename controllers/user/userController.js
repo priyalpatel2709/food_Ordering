@@ -70,7 +70,6 @@ const deleteById = asyncHandler(async (req, res, next) => {
   const User = getUserModel(req.usersDb);
   const roleOperations = crudOperations({
     mainModel: User,
-    populateModels: [],
   });
   roleOperations.deleteById(req, res, next);
 });

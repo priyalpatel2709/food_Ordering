@@ -25,8 +25,8 @@ const menuSchema = new mongoose.Schema(
         },
         timeSlots: [
           {
-            openTime: { type: String, required: true }, // e.g., "08:00 AM"
-            closeTime: { type: String, required: true }, // e.g., "12:00 PM"
+            openTime: { type: String, required: true }, // e.g., "08:00"
+            closeTime: { type: String, required: true }, // e.g., "12:00"
           },
         ],
       },
@@ -34,12 +34,12 @@ const menuSchema = new mongoose.Schema(
     categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
     items: [
       {
-        itemId: {
+        item: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Item",
           required: true,
         },
-        defaultPrice: { type: Number, required: true, min: 0 },
+        defaultPrice: { type: Number, min: 0 },
 
         // Time-based and weekday pricing
         timeBasedPricing: [
@@ -138,6 +138,16 @@ const menuSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+menuSchema.pre("save", async function (next) {
+  for (let i = 0; i < this.items.length; i++) {
+    const itemData = await mongoose.model("Item").findById(this.items[i].item);
+    if (itemData) {
+      this.items[i].defaultPrice = itemData.price;
+    }
+  }
+  next();
+});
 
 const getMenuModel = (connection) => {
   return connection.model("Menu", menuSchema);

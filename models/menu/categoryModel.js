@@ -10,6 +10,7 @@ const categorySchema = new mongoose.Schema(
     description: { type: String },
     isActive: { type: Boolean, default: true },
     displayOrder: { type: Number }, // Sorting order
+    categoryImage: { type: String },
     metaData: [
       {
         key: { type: String },
