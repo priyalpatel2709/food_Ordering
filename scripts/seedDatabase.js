@@ -25,181 +25,181 @@ const seedDatabase = async () => {
     const Item = getItemModel(restaurantDB);
     const Menu = getMenuModel(restaurantDB);
 
-    // await Category.insertMany([
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Burgers",
-    //     description: "Grilled burgers",
-    //     isActive: true,
-    //     displayOrder: 1,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Pizza",
-    //     description: "Hand-tossed pizzas",
-    //     isActive: true,
-    //     displayOrder: 2,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Pasta",
-    //     description: "Authentic Italian pasta",
-    //     isActive: true,
-    //     displayOrder: 3,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Salads",
-    //     description: "Fresh and healthy",
-    //     isActive: true,
-    //     displayOrder: 4,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Desserts",
-    //     description: "Sweet and delicious",
-    //     isActive: true,
-    //     displayOrder: 5,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Steaks",
-    //     description: "Juicy premium cuts",
-    //     isActive: true,
-    //     displayOrder: 6,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Wraps",
-    //     description: "Flavored wraps",
-    //     isActive: true,
-    //     displayOrder: 7,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "BBQ",
-    //     description: "Smoked BBQ platters",
-    //     isActive: true,
-    //     displayOrder: 8,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Seafood",
-    //     description: "Fresh seafood",
-    //     isActive: true,
-    //     displayOrder: 9,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Asian Cuisine",
-    //     description: "Authentic Asian flavors",
-    //     isActive: true,
-    //     displayOrder: 10,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Breakfast",
-    //     description: "Morning delights",
-    //     isActive: true,
-    //     displayOrder: 11,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Sandwiches",
-    //     description: "Gourmet sandwiches",
-    //     isActive: true,
-    //     displayOrder: 12,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Smoothies",
-    //     description: "Healthy smoothies",
-    //     isActive: true,
-    //     displayOrder: 13,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Vegan",
-    //     description: "Plant-based meals",
-    //     isActive: true,
-    //     displayOrder: 14,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Tacos",
-    //     description: "Mexican street tacos",
-    //     isActive: true,
-    //     displayOrder: 15,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Fries",
-    //     description: "Crispy fries & sides",
-    //     isActive: true,
-    //     displayOrder: 16,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Rice Bowls",
-    //     description: "Hearty rice dishes",
-    //     isActive: true,
-    //     displayOrder: 17,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Indian Cuisine",
-    //     description: "Traditional Indian flavors",
-    //     isActive: true,
-    //     displayOrder: 18,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Sushi",
-    //     description: "Freshly made sushi",
-    //     isActive: true,
-    //     displayOrder: 19,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Drinks",
-    //     description: "Refreshing beverages",
-    //     isActive: true,
-    //     displayOrder: 20,
-    //   },
-    // ]);
+    await Category.insertMany([
+      {
+        restaurantId: "restaurant_123",
+        name: "Burgers",
+        description: "Grilled burgers",
+        isActive: true,
+        displayOrder: 1,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Pizza",
+        description: "Hand-tossed pizzas",
+        isActive: true,
+        displayOrder: 2,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Pasta",
+        description: "Authentic Italian pasta",
+        isActive: true,
+        displayOrder: 3,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Salads",
+        description: "Fresh and healthy",
+        isActive: true,
+        displayOrder: 4,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Desserts",
+        description: "Sweet and delicious",
+        isActive: true,
+        displayOrder: 5,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Steaks",
+        description: "Juicy premium cuts",
+        isActive: true,
+        displayOrder: 6,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Wraps",
+        description: "Flavored wraps",
+        isActive: true,
+        displayOrder: 7,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "BBQ",
+        description: "Smoked BBQ platters",
+        isActive: true,
+        displayOrder: 8,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Seafood",
+        description: "Fresh seafood",
+        isActive: true,
+        displayOrder: 9,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Asian Cuisine",
+        description: "Authentic Asian flavors",
+        isActive: true,
+        displayOrder: 10,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Breakfast",
+        description: "Morning delights",
+        isActive: true,
+        displayOrder: 11,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Sandwiches",
+        description: "Gourmet sandwiches",
+        isActive: true,
+        displayOrder: 12,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Smoothies",
+        description: "Healthy smoothies",
+        isActive: true,
+        displayOrder: 13,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Vegan",
+        description: "Plant-based meals",
+        isActive: true,
+        displayOrder: 14,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Tacos",
+        description: "Mexican street tacos",
+        isActive: true,
+        displayOrder: 15,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Fries",
+        description: "Crispy fries & sides",
+        isActive: true,
+        displayOrder: 16,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Rice Bowls",
+        description: "Hearty rice dishes",
+        isActive: true,
+        displayOrder: 17,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Indian Cuisine",
+        description: "Traditional Indian flavors",
+        isActive: true,
+        displayOrder: 18,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Sushi",
+        description: "Freshly made sushi",
+        isActive: true,
+        displayOrder: 19,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Drinks",
+        description: "Refreshing beverages",
+        isActive: true,
+        displayOrder: 20,
+      },
+    ]);
 
-    // await CustomizationOption.insertMany([
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Extra Cheese",
-    //     price: 1.5,
-    //     isActive: true,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Spicy Sauce",
-    //     price: 0.75,
-    //     isActive: true,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Gluten-Free",
-    //     price: 2.0,
-    //     isActive: true,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Bacon Bits",
-    //     price: 2.0,
-    //     isActive: true,
-    //   },
-    //   {
-    //     restaurantId: "restaurant_123",
-    //     name: "Double Patty",
-    //     price: 3.5,
-    //     isActive: true,
-    //   },
-    // ]);
+    await CustomizationOption.insertMany([
+      {
+        restaurantId: "restaurant_123",
+        name: "Extra Cheese",
+        price: 1.5,
+        isActive: true,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Spicy Sauce",
+        price: 0.75,
+        isActive: true,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Gluten-Free",
+        price: 2.0,
+        isActive: true,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Bacon Bits",
+        price: 2.0,
+        isActive: true,
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Double Patty",
+        price: 3.5,
+        isActive: true,
+      },
+    ]);
 
     const categories = await Category.find({}, "_id"); // Fetch inserted categories
     const customizations = await CustomizationOption.find({}, "_id"); // Fetch inserted customizations
@@ -232,181 +232,181 @@ const seedDatabase = async () => {
         });
       }
     });
-    // await Item.insertMany(items);
+    await Item.insertMany(items);
 
     const itemsV2 = await Item.find({}, "_id");
     await Menu.insertMany([
-      // {
-      //   restaurantId: "restaurant_123",
-      //   name: "Lunch Special",
-      //   description: "Available from 12 PM - 3 PM",
-      //   isActive: true,
-      //   availableDays: [
-      //     {
-      //       day: "Monday",
-      //       timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
-      //     },
-      //     {
-      //       day: "Tuesday",
-      //       timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
-      //     },
-      //   ],
-      //   categories: categories.map((cat) => cat._id),
-      //   items: itemsV2.slice(0, 10).map((item) => ({
-      //     item: item._id,
-      //     defaultPrice: 10,
-      //   })),
-      //   taxes: ["67a5c841986379debc2b8e4e"],
-      // },
-      // {
-      //   restaurantId: "restaurant_123",
-      //   name: "Dinner Special",
-      //   description: "Available from 6 PM - 10 PM",
-      //   isActive: true,
-      //   availableDays: [
-      //     {
-      //       day: "Friday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //     {
-      //       day: "Saturday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //   ],
-      //   categories: categories.map((cat) => cat._id),
-      //   items: itemsV2.slice(10, 20).map((item) => ({
-      //     item: item._id,
-      //     defaultPrice: 15,
-      //   })),
-      //   taxes: ["67a5c841986379debc2b8e4e"],
-      // },
+      {
+        restaurantId: "restaurant_123",
+        name: "Lunch Special",
+        description: "Available from 12 PM - 3 PM",
+        isActive: true,
+        availableDays: [
+          {
+            day: "Monday",
+            timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
+          },
+          {
+            day: "Tuesday",
+            timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
+          },
+        ],
+        categories: categories.map((cat) => cat._id),
+        items: itemsV2.slice(0, 10).map((item) => ({
+          item: item._id,
+          defaultPrice: 10,
+        })),
+        taxes: ["67a5c841986379debc2b8e4e"],
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Dinner Special",
+        description: "Available from 6 PM - 10 PM",
+        isActive: true,
+        availableDays: [
+          {
+            day: "Friday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+          {
+            day: "Saturday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+        ],
+        categories: categories.map((cat) => cat._id),
+        items: itemsV2.slice(10, 20).map((item) => ({
+          item: item._id,
+          defaultPrice: 15,
+        })),
+        taxes: ["67a5c841986379debc2b8e4e"],
+      },
 
-      // {
-      //   restaurantId: "restaurant_123",
-      //   name: "Dinner Special",
-      //   description: "Available from 6 PM - 10 PM",
-      //   isActive: true,
-      //   availableDays: [
-      //     {
-      //       day: "Monday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //     {
-      //       day: "Tuesday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //     {
-      //       day: "Wednesday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //     {
-      //       day: "Thursday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //     {
-      //       day: "Friday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //     {
-      //       day: "Saturday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //     {
-      //       day: "Sunday",
-      //       timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
-      //     },
-      //   ],
-      //   categories: categories.map((cat) => cat._id),
-      //   items: itemsV2.slice(10, 20).map((item) => ({
-      //     item: item._id,
-      //     defaultPrice: 15,
-      //   })),
-      //   taxes: ["67a5c841986379debc2b8e4e"],
-      // },
-      // {
-      //   restaurantId: "restaurant_123",
-      //   name: "Lunch Special",
-      //   description: "Available from 2 PM - 6 PM",
-      //   isActive: true,
-      //   availableDays: [
-      //     {
-      //       day: "Monday",
-      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
-      //     },
-      //     {
-      //       day: "Tuesday",
-      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
-      //     },
-      //     {
-      //       day: "Wednesday",
-      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
-      //     },
-      //     {
-      //       day: "Thursday",
-      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
-      //     },
-      //     {
-      //       day: "Friday",
-      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
-      //     },
-      //     {
-      //       day: "Saturday",
-      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
-      //     },
-      //     {
-      //       day: "Sunday",
-      //       timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
-      //     },
-      //   ],
-      //   categories: categories.map((cat) => cat._id),
-      //   items: itemsV2.slice(10, 20).map((item) => ({
-      //     item: item._id,
-      //     defaultPrice: 15,
-      //   })),
-      //   taxes: ["67a5c841986379debc2b8e4e"],
-      // },
-      // {
-      //   restaurantId: "restaurant_123",
-      //   name: "Morning Special",
-      //   description: "Available from 9 AM - 2 PM",
-      //   isActive: true,
-      //   availableDays: [
-      //     {
-      //       day: "Monday",
-      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
-      //     },
-      //     {
-      //       day: "Tuesday",
-      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
-      //     },
-      //     {
-      //       day: "Wednesday",
-      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
-      //     },
-      //     {
-      //       day: "Thursday",
-      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
-      //     },
-      //     {
-      //       day: "Friday",
-      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
-      //     },
-      //     {
-      //       day: "Saturday",
-      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
-      //     },
-      //     {
-      //       day: "Sunday",
-      //       timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
-      //     },
-      //   ],
-      //   categories: categories.map((cat) => cat._id),
-      //   items: itemsV2.slice(10, 20).map((item) => ({
-      //     item: item._id,
-      //     defaultPrice: 15,
-      //   })),
-      //   taxes: ["67a5c841986379debc2b8e4e"],
-      // },
+      {
+        restaurantId: "restaurant_123",
+        name: "Dinner Special",
+        description: "Available from 6 PM - 10 PM",
+        isActive: true,
+        availableDays: [
+          {
+            day: "Monday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+          {
+            day: "Tuesday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+          {
+            day: "Wednesday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+          {
+            day: "Thursday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+          {
+            day: "Friday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+          {
+            day: "Saturday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+          {
+            day: "Sunday",
+            timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
+          },
+        ],
+        categories: categories.map((cat) => cat._id),
+        items: itemsV2.slice(10, 20).map((item) => ({
+          item: item._id,
+          defaultPrice: 15,
+        })),
+        taxes: ["67a5c841986379debc2b8e4e"],
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Lunch Special",
+        description: "Available from 2 PM - 6 PM",
+        isActive: true,
+        availableDays: [
+          {
+            day: "Monday",
+            timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+          },
+          {
+            day: "Tuesday",
+            timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+          },
+          {
+            day: "Wednesday",
+            timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+          },
+          {
+            day: "Thursday",
+            timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+          },
+          {
+            day: "Friday",
+            timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+          },
+          {
+            day: "Saturday",
+            timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+          },
+          {
+            day: "Sunday",
+            timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
+          },
+        ],
+        categories: categories.map((cat) => cat._id),
+        items: itemsV2.slice(10, 20).map((item) => ({
+          item: item._id,
+          defaultPrice: 15,
+        })),
+        taxes: ["67a5c841986379debc2b8e4e"],
+      },
+      {
+        restaurantId: "restaurant_123",
+        name: "Morning Special",
+        description: "Available from 9 AM - 2 PM",
+        isActive: true,
+        availableDays: [
+          {
+            day: "Monday",
+            timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+          },
+          {
+            day: "Tuesday",
+            timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+          },
+          {
+            day: "Wednesday",
+            timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+          },
+          {
+            day: "Thursday",
+            timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+          },
+          {
+            day: "Friday",
+            timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+          },
+          {
+            day: "Saturday",
+            timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+          },
+          {
+            day: "Sunday",
+            timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
+          },
+        ],
+        categories: categories.map((cat) => cat._id),
+        items: itemsV2.slice(10, 20).map((item) => ({
+          item: item._id,
+          defaultPrice: 15,
+        })),
+        taxes: ["67a5c841986379debc2b8e4e"],
+      },
       {
         restaurantId: "restaurant_123",
         name: "Sample Restaurant Menu",

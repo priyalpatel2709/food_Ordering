@@ -13,6 +13,8 @@ const {
   getTaxModel,
 } = require("./restaurant/index");
 
+const { getOrderModel, getOrderTypeModel } = require("./order/index");
+
 module.exports = {
   getUserModel,
   getRestaurantModel,
@@ -22,4 +24,6 @@ module.exports = {
   getDiscountModel,
   getTaxModel,
   getCategoryModel,
+  getOrderModel,
+  getOrderTypeModel,
 };
