@@ -24,7 +24,7 @@ const itemSchema = new mongoose.Schema(
     popularityScore: { type: Number, default: 0 },
     averageRating: { type: Number, min: 0, max: 5 },
     taxable: { type: Boolean, default: true },
-    taxRate: { type: mongoose.Schema.Types.ObjectId, ref: "Tax" },
+    taxRate: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tax" }],
     minOrderQuantity: { type: Number, min: 1, default: 1 },
     maxOrderQuantity: { type: Number, min: 1 },
     metaData: [
