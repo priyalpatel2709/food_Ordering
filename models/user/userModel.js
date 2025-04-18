@@ -21,6 +21,10 @@ const userModel = new mongoose.Schema(
         zip: { type: String },
         country: { type: String },
         addressType: { type: String },
+        coordinates: {
+          lat: { type: Number },
+          lng: { type: Number },
+        },
       },
     ],
     roleName: { type: String },

@@ -1,15 +1,19 @@
+const { userRouters } = require("./user/index");
+
 const {
   restaurantRouters,
   discountRouters,
   taxRouters,
 } = require("./restaurant/index");
-const { userRouters } = require("./user/index");
+
 const {
   customizationOptionRoute,
   categoryRoute,
   itemRoute,
   menuRoute,
 } = require("./menu/index");
+
+const { orderRoutes, orderTypeRoutes } = require("./order/index");
 
 module.exports = {
   userRouters,
@@ -20,4 +24,6 @@ module.exports = {
   categoryRoute,
   itemRoute,
   menuRoute,
+  orderRoutes,
+  orderTypeRoutes,
 };

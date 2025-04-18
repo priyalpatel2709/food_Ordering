@@ -1,7 +1,12 @@
 const asyncHandler = require("express-async-handler");
 const generateToken = require("../../config/generateToken");
 const crudOperations = require("../../utils/crudOperations");
-const { getUserModel } = require("../../models");
+const {
+  getUserModel,
+  getOrderModel,
+  getOrderTypeModel,
+  getItemModel,
+} = require("../../models");
 const createError = require("http-errors");
 
 const registerUser = asyncHandler(async (req, res, next) => {
@@ -110,10 +115,61 @@ const getUsersByRestaurantsId = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getAllOrders = asyncHandler(async (req, res, next) => {
+  try {
+    const Order = getOrderModel(req.restaurantDb);
+    const OrderType = getOrderTypeModel(req.restaurantDb);
+    const Item = getItemModel(req.restaurantDb);
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalOrders = await Order.countDocuments({
+      customerId: req.user._id,
+    });
+
+    const userOrders = await Order.find({ customerId: req.user._id })
+      .select("-tax.taxes -discount.discounts -customerId")
+      .skip(skip)
+      .limit(limit)
+      .populate({
+        path: "orderType",
+        model: OrderType,
+        select: "orderType",
+      })
+      .populate({
+        path: "orderItems.item",
+        model: Item,
+        select: "name description image",
+      })
+      .lean();
+
+    if (userOrders.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "No orders found for this user",
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      total: totalOrders,
+      page,
+      limit,
+      data: userOrders,
+    });
+  } catch (error) {
+    console.error("Error in getAllOrders:", error);
+    next(createError(500, "Failed to fetch orders", { error: error.message }));
+  }
+});
+
 module.exports = {
   registerUser,
   authUser,
   deleteById,
   getAllUsers,
   getUsersByRestaurantsId,
+  getAllOrders,
 };

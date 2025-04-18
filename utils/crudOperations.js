@@ -27,12 +27,27 @@ const crudOperations = (models) => {
     // Get all documents
     getAll: async (req, res, next) => {
       try {
-        let query = mainModel.find({}).select(select);
+        const page = req.query.page ? parseInt(req.query.page) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+        const skip = (page - 1) * limit;
+
+        const totalDocs = await mainModel.countDocuments();
+        const totalPages = Math.ceil(totalDocs / limit);
+
+        let query = mainModel.find({}).skip(skip).limit(limit).select(select);
         query = await populateNestedFields(query, populateModels);
         const documents = await query;
-        res.status(200).json(documents);
+
+        res.status(200).json({
+          status: "success",
+          page,
+          limit,
+          totalDocs,
+          totalPages,
+          data: documents,
+        });
       } catch (err) {
-        console.error("Error in getAll:", err); // Log the error for debugging
+        console.error("Error in getAll:", err);
         next(createError(500, "Error fetching data", { error: err.message }));
       }
     },
@@ -68,6 +83,7 @@ const crudOperations = (models) => {
         const savedDocument = await newDocument.save();
         res.status(201).json(savedDocument);
       } catch (err) {
+        console.log("File: crudOperations.js", "Line 71:", err);
         next(
           createError(500, "Error creating document", {
             errorMessage: err.message,

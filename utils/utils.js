@@ -63,8 +63,20 @@ const buildPopulateOptions = (query) => {
   return extractNestedFields("populate[");
 };
 
+const generateQnicOrderId = ({
+  restaurantCode = "GEN",
+  orderTypeCode = "GEN",
+} = {}) => {
+  const now = new Date();
+  const datePart = now.toISOString().split("T")[0].replace(/-/g, ""); // e.g., 20250418
+  const randomSegment = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+
+  return `${restaurantCode}-${orderTypeCode}-${datePart}-${randomSegment}`;
+};
+
 module.exports = {
   getQueryParams,
   parseQueryString,
   buildPopulateOptions,
+  generateQnicOrderId,
 };

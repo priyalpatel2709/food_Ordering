@@ -9,6 +9,7 @@ const {
   deleteById,
   getAllUsers,
   getUsersByRestaurantsId,
+  getAllOrders
 } = require("../../controllers/user/userController");
 
 router.post("/", identifyTenant, registerUser);
@@ -21,5 +22,7 @@ router.get(
   protect,
   getUsersByRestaurantsId
 );
+
+router.get("/orders", identifyTenant, protect, getAllOrders);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { generateQnicOrderId } = require("../../utils/utils");
 
 const orderSchema = new mongoose.Schema(
   {
@@ -6,10 +7,14 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    orderId: { type: String, required: true, unique: true },
+    orderId: { type: String, unique: true },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+    },
+    menuId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Menu",
     },
     orderNote: { type: String },
     orderType: {
@@ -27,6 +32,7 @@ const orderSchema = new mongoose.Schema(
       state: { type: String },
       zipCode: { type: String },
       country: { type: String },
+      addressType: { type: String },
       coordinates: {
         lat: { type: Number },
         lng: { type: Number },
@@ -36,8 +42,25 @@ const orderSchema = new mongoose.Schema(
     deliveryCharge: { type: Number, min: 0, default: 0 },
     deliveryTimeEstimate: { type: Number }, // Added estimate in minutes
     subtotal: { type: Number, min: 0, required: true }, // Added as base price before taxes/fees
-    taxCharge: { type: Number, min: 0, default: 0 },
-    discount: { type: mongoose.Schema.Types.ObjectId, ref: "Discount" }, // Added for tracking applied codes
+    // taxCharge: { type: Number, min: 0, default: 0 },
+    tax: {
+      taxes: [
+        {
+          taxId: { type: mongoose.Schema.Types.ObjectId, ref: "Tax" },
+          taxCharge: { type: Number, min: 0, default: 0 },
+        },
+      ],
+      totalTaxAmount: { type: Number, min: 0, default: 0 },
+    },
+    discount: {
+      discounts: [
+        {
+          discountId: { type: mongoose.Schema.Types.ObjectId, ref: "Discount" },
+          discountAmount: { type: Number, default: 0 },
+        },
+      ],
+      totalDiscountAmount: { type: Number, min: 0, default: 0 },
+    }, // Added for tracking applied codes
     orderFinalCharge: { type: Number, min: 0, required: true },
     paymentMethod: {
       // Added payment details
@@ -82,6 +105,7 @@ const orderSchema = new mongoose.Schema(
         },
         quantity: { type: Number, min: 1, required: true },
         price: { type: Number, min: 0, required: true },
+        discountPrice: { type: Number },
         specialInstructions: { type: String },
         modifiers: [
           {
@@ -120,6 +144,13 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+orderSchema.pre("save", async function (next) {
+  // Auto-generate QNIC order ID if not already set
+  if (!this.orderId) {
+    this.orderId = generateQnicOrderId();
+  }
+});
 
 const getOrderModel = (connection) => {
   return connection.model("Order", orderSchema);
