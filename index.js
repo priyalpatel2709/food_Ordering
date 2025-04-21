@@ -1,11 +1,14 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
-const cookieParser = require('cookie-parser');
+const cookieParser = require("cookie-parser");
 
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const securityMiddleware = require("./middleware/securityMiddleware");
-const { requestLogger, errorLogger } = require("./middleware/loggingMiddleware");
+const {
+  requestLogger,
+  errorLogger,
+} = require("./middleware/loggingMiddleware");
 const {
   userRouters,
   restaurantRouters,
@@ -16,7 +19,8 @@ const {
   itemRoute,
   menuRoute,
   orderRoutes,
-  orderTypeRoutes
+  orderTypeRoutes,
+  paymentRoutes,
 } = require("./routes");
 
 // Load environment variables
@@ -31,21 +35,21 @@ securityMiddleware(app);
 app.use(requestLogger);
 
 // Body parsing middleware
-app.use(express.json({ limit: '10kb' })); // Limit body size
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: "10kb" })); // Limit body size
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());
 
 // Remove x-powered-by header
-app.disable('x-powered-by');
+app.disable("x-powered-by");
 
 const PORT = process.env.PORT || 2580;
 
 // Health check endpoint
 app.get("/health", (req, resp) => {
   resp.status(200).json({
-    status: 'success',
-    message: 'Server is healthy and running',
-    timestamp: new Date().toISOString()
+    status: "success",
+    message: "Server is healthy and running",
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -60,6 +64,7 @@ app.use("/api/v1/item", itemRoute);
 app.use("/api/v1/menu", menuRoute);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/orderType", orderTypeRoutes);
+app.use("/api/v1/payment", paymentRoutes);
 
 // Error handling
 app.use(errorLogger); // Add error logging before error handling
@@ -67,10 +72,10 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Graceful shutdown handling
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully');
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received. Shutting down gracefully");
   server.close(() => {
-    console.log('Process terminated');
+    console.log("Process terminated");
     process.exit(0);
   });
 });
@@ -80,8 +85,8 @@ const server = app.listen(PORT, () => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
+process.on("unhandledRejection", (err) => {
+  console.log("UNHANDLED REJECTION! 💥 Shutting down...");
   console.log(err.name, err.message);
   server.close(() => {
     process.exit(1);

@@ -64,7 +64,6 @@ const crudOperations = (models) => {
           next(createError(404, "Document not found"));
         }
       } catch (err) {
-        console.log("File: crudOperations.js", "Line 52:", err);
         next(createError(500, "Error fetching data", { error: err.message }));
       }
     },
@@ -83,7 +82,6 @@ const crudOperations = (models) => {
         const savedDocument = await newDocument.save();
         res.status(201).json(savedDocument);
       } catch (err) {
-        console.log("File: crudOperations.js", "Line 71:", err);
         next(
           createError(500, "Error creating document", {
             errorMessage: err.message,

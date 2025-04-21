@@ -126,15 +126,21 @@ const orderSchema = new mongoose.Schema(
         value: mongoose.Schema.Types.Mixed,
       },
     ],
-    refunds: [
-      {
-        // Added for partial/full refunds
-        amount: { type: Number, min: 0, required: true },
-        reason: { type: String },
-        processedAt: { type: Date, default: Date.now },
-        processedBy: { type: String },
-      },
-    ],
+    refunds: {
+      history: [
+        {
+          // Added for partial/full refunds
+          amount: { type: Number, min: 0, required: true },
+          reason: { type: String },
+          processedAt: { type: Date, default: Date.now },
+          processedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+          },
+        },
+      ],
+      remainingCharge: { type: Number, min: 0, default: 0 },
+    },
     rating: {
       // Added for customer feedback
       value: { type: Number, min: 1, max: 5 },

@@ -13,7 +13,11 @@ const {
   menuRoute,
 } = require("./menu/index");
 
-const { orderRoutes, orderTypeRoutes } = require("./order/index");
+const {
+  orderRoutes,
+  orderTypeRoutes,
+  paymentRoutes,
+} = require("./order/index");
 
 module.exports = {
   userRouters,
@@ -26,4 +30,5 @@ module.exports = {
   menuRoute,
   orderRoutes,
   orderTypeRoutes,
+  paymentRoutes,
 };

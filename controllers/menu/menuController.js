@@ -292,8 +292,6 @@ const updateMenu = async (req, res, next) => {
       return next(createError(400, "itemId is required"));
     }
 
-    console.log("File: menuController.js", "Line 264:", timeSlotId);
-
     // Perform the database update
     const updatedDocument = await Menu.findOneAndUpdate(
       {

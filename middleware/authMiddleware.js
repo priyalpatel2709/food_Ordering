@@ -20,7 +20,6 @@ const protect = asyncHandler(async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.log('File: authMiddleware.js', 'Line 23:', error);
     res.status(401).json({ error: "Not authorized, token invalid" });
   }
 });

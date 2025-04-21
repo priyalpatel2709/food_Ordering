@@ -232,6 +232,11 @@ const getAllOrders = asyncHandler(async (req, res, next) => {
         model: Discount,
         select: "type value discountName",
       },
+      {
+        field: "refunds.history.processedBy",
+        model: User,
+        select: "name email",
+      },
     ],
   });
   orderOperations.getAll(req, res, next);

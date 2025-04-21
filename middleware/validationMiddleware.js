@@ -137,6 +137,11 @@ const schemas = {
       .min(1)
       .required(),
   }),
+
+  giveRefund: Joi.object({
+    amount: Joi.number().required(),
+    reason: Joi.string().required(),
+  }),
 };
 
 module.exports = {
