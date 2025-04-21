@@ -62,13 +62,33 @@ const orderSchema = new mongoose.Schema(
       totalDiscountAmount: { type: Number, min: 0, default: 0 },
     }, // Added for tracking applied codes
     orderFinalCharge: { type: Number, min: 0, required: true },
-    paymentMethod: {
-      // Added payment details
-      type: { type: String, enum: ["credit", "debit", "cash", "online"] },
-      transactionId: { type: String },
-      status: {
+    payment: {
+      history: [
+        {
+          method: {
+            type: String,
+            enum: ["credit", "debit", "cash", "online", "wallet", "upi"],
+            required: true,
+          },
+          transactionId: { type: String, trim: true, default: null },
+          status: {
+            type: String,
+            enum: ["pending", "complete", "failed", "refunded"],
+            default: "pending",
+          },
+          amount: { type: Number, required: true, min: 0 },
+          processedAt: { type: Date, default: Date.now },
+          processedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Optional: if done manually
+          gateway: { type: String, trim: true }, // e.g., Stripe, Razorpay
+          notes: { type: String, trim: true, maxlength: 500 },
+        },
+      ],
+      totalPaid: { type: Number, required: true, default: 0 },
+      balanceDue: { type: Number, required: true, default: 0 },
+      paymentStatus: {
         type: String,
-        enum: ["pending", "complete", "failed", "refunded"],
+        enum: ["pending", "paid", "partially_paid", "refunded"],
+        default: "pending",
       },
     },
     orderStatus: {

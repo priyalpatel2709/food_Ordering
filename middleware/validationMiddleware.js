@@ -1,5 +1,8 @@
 const { de } = require("date-fns/locale");
 const Joi = require("joi");
+const {
+  processPayment,
+} = require("../controllers/order/Payment/paymentController");
 
 const validateRequest = (schema) => {
   return (req, res, next) => {
@@ -141,6 +144,14 @@ const schemas = {
   giveRefund: Joi.object({
     amount: Joi.number().required(),
     reason: Joi.string().required(),
+  }),
+
+  processPayment: Joi.object({
+    amount: Joi.number().required(),
+    method: Joi.string().required(),
+    transactionId: Joi.string().required(),
+    gateway: Joi.string().allow("", null),
+    notes: Joi.string().allow("", null),
   }),
 };
 

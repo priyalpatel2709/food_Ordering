@@ -10,6 +10,7 @@ const {
 
 const {
   giveRefund,
+  processPayment,
 } = require("../../../controllers/order/Payment/paymentController");
 
 router.post(
@@ -19,6 +20,15 @@ router.post(
   protect,
   allowedRoles("admin"),
   giveRefund
+);
+
+router.post(
+  "/processPayment/:orderId",
+  validateRequest(schemas.processPayment),
+  identifyTenant,
+  protect,
+  // allowedRoles("admin"),
+  processPayment
 );
 
 module.exports = router;
