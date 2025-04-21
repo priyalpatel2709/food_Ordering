@@ -7,6 +7,7 @@ const {
   schemas,
   adminOnly,
   allowedRoles,
+  queryHandler,
 } = require("../../middleware/index");
 
 const {
@@ -35,9 +36,10 @@ router.get(
   identifyTenant,
   protect,
   allowedRoles(["manager"]),
+  queryHandler,
   getAllOrders
 );
-router.get("/:id", identifyTenant, protect, getOrderById);
+router.get("/:id", identifyTenant, protect, queryHandler, getOrderById);
 router.delete("/", identifyTenant, protect, allowedRoles(["admin"]), deleteAll);
 router.delete(
   "/:id",

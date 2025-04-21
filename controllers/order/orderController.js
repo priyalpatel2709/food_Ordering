@@ -8,6 +8,7 @@ const {
   getTaxModel,
   getDiscountModel,
 } = require("../../models/index");
+const { getQueryParams } = require("../../utils/utils");
 
 const createOrder = asyncHandler(async (req, res, next) => {
   try {
@@ -210,22 +211,26 @@ const getAllOrders = asyncHandler(async (req, res, next) => {
       {
         field: "customerId",
         model: User,
-        select: "name email",
+        select: `name ${getQueryParams(req.queryOptions?.select?.user)}`,
       },
       {
         field: "orderType",
         model: OrderType,
-        select: "orderType orderTypeNote",
+        select: `orderType ${getQueryParams(
+          req.queryOptions?.select?.orderType
+        )}`,
       },
       {
         field: "orderItems.item",
         model: Item,
-        select: "name description price image",
+        select: `name ${getQueryParams(req.queryOptions?.select?.item)}`,
       },
       {
         field: "tax.taxes.taxId",
         model: Tax,
-        select: "name percentage",
+        select: `name percentage ${getQueryParams(
+          req.queryOptions?.select?.tax
+        )}`,
       },
       {
         field: "discount.discounts.discountId",
@@ -235,7 +240,7 @@ const getAllOrders = asyncHandler(async (req, res, next) => {
       {
         field: "refunds.history.processedBy",
         model: User,
-        select: "name email",
+        select: `name  ${getQueryParams(req.queryOptions?.select?.user)}`,
       },
     ],
   });
