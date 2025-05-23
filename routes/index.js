@@ -11,6 +11,7 @@ const {
   categoryRoute,
   itemRoute,
   menuRoute,
+  menuRouteV2,
 } = require("./menu/index");
 
 const {
@@ -31,4 +32,5 @@ module.exports = {
   orderRoutes,
   orderTypeRoutes,
   paymentRoutes,
+  menuRouteV2,
 };

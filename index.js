@@ -21,6 +21,7 @@ const {
   orderRoutes,
   orderTypeRoutes,
   paymentRoutes,
+  menuRouteV2,
 } = require("./routes");
 
 // Load environment variables
@@ -54,6 +55,8 @@ app.get("/health", (req, resp) => {
 });
 
 // API routes
+
+/// V1
 app.use("/api/v1/user", userRouters);
 app.use("/api/v1/restaurant", restaurantRouters);
 app.use("/api/v1/discount", discountRouters);
@@ -65,6 +68,9 @@ app.use("/api/v1/menu", menuRoute);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/orderType", orderTypeRoutes);
 app.use("/api/v1/payment", paymentRoutes);
+
+///V2
+app.use("/api/v2/menu", menuRouteV2);
 
 // Error handling
 app.use(errorLogger); // Add error logging before error handling
