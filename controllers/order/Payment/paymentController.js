@@ -1,11 +1,12 @@
 const asyncHandler = require("express-async-handler");
 const crudOperations = require("../../../utils/crudOperations");
-const { getOrderModel } = require("../../../models/index");
+const { getOrderModel, getRefundModel } = require("../../../models/index");
 const { tr } = require("date-fns/locale");
 
 const giveRefund = asyncHandler(async (req, res, next) => {
   try {
     const Order = getOrderModel(req.restaurantDb);
+    const Refund = getRefundModel(req.restaurantDb);
 
     const orderId = req.params.orderId;
     const { amount, reason } = req.body;
@@ -47,16 +48,21 @@ const giveRefund = asyncHandler(async (req, res, next) => {
       });
     }
 
-    const newRefund = {
+    const newRefundData = {
       amount: refundAmount,
       reason: reason || "Not provided",
       processedBy: req.user._id,
-      processedAt: new Date(),
+      orderId: order._id,
     };
+
+    const newRefund = new Refund(newRefundData);
+    const savedRefund = await newRefund.save();
+
+    // console.log('File: paymentController.js', 'Line 61:', savedRefund);
 
     // Safely update refund record
     order.refunds = {
-      history: [...previousRefunds, newRefund],
+      history: [...previousRefunds, savedRefund._id],
       remainingCharge: remainingCharge - refundAmount,
     };
 
@@ -71,7 +77,7 @@ const giveRefund = asyncHandler(async (req, res, next) => {
         refundedAmount: refundAmount,
         totalRefunded: totalRefunded + refundAmount,
         remainingCharge: order.refunds.remainingCharge,
-        refundDetails: newRefund,
+        refundDetails: newRefundData,
       },
     });
   } catch (error) {
@@ -176,7 +182,65 @@ const processPayment = asyncHandler(async (req, res, next) => {
   }
 });
 
+const applyDiscount = asyncHandler(async (req, res, next) => {
+  try {
+    const Order = getOrderModel(req.restaurantDb);
+    const orderId = req.params.orderId;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        status: "error",
+        message: "Order not found",
+      });
+    }
+
+    const { discountAmount } = req.body;
+
+    if (!discountAmount || isNaN(discountAmount) || discountAmount <= 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid discount amount",
+      });
+    }
+
+    const discountEntry = {
+      amount: Number(discountAmount),
+      processedAt: new Date(),
+      processedBy: req.user?._id || null,
+    };
+
+    // Push new discount to history
+    order.discountHistory = order.discountHistory || [];
+    order.discountHistory.push(discountEntry);
+
+    // Update totalDiscount
+    order.totalDiscount += Number(discountAmount);
+
+    await order.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Discount applied successfully",
+      data: {
+        totalDiscount: order.totalDiscount,
+        discountHistory: order.discountHistory,
+      },
+    });
+  } catch (error) {
+    console.error(
+      `Discount application error (orderId: ${req.params.orderId}):`,
+      error
+    );
+    res.status(500).json({
+      status: "error",
+      message: "Failed to apply discount. Please try again.",
+    });
+  }
+});
+
 module.exports = {
   giveRefund,
   processPayment,
+  applyDiscount,
 };

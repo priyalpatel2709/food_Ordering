@@ -147,18 +147,7 @@ const orderSchema = new mongoose.Schema(
       },
     ],
     refunds: {
-      history: [
-        {
-          // Added for partial/full refunds
-          amount: { type: Number, min: 0, required: true },
-          reason: { type: String },
-          processedAt: { type: Date, default: Date.now },
-          processedBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-          },
-        },
-      ],
+      history: [{ type: mongoose.Schema.Types.ObjectId, ref: "Refund" }],
       remainingCharge: { type: Number, min: 0, default: 0 },
     },
     rating: {
