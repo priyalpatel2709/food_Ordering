@@ -1,5 +1,12 @@
 const mongoose = require("mongoose");
 const { generateQnicOrderId } = require("../../utils/utils");
+const { 
+  ORDER_STATUS, 
+  PAYMENT_METHODS, 
+  PAYMENT_STATUS, 
+  TRANSACTION_STATUS,
+  ADDRESS_TYPES 
+} = require("../../utils/const");
 
 const orderSchema = new mongoose.Schema(
   {
@@ -32,7 +39,7 @@ const orderSchema = new mongoose.Schema(
       state: { type: String },
       zipCode: { type: String },
       country: { type: String },
-      addressType: { type: String },
+      addressType: { type: String, enum: Object.values(ADDRESS_TYPES) },
       coordinates: {
         lat: { type: Number },
         lng: { type: Number },
@@ -67,14 +74,14 @@ const orderSchema = new mongoose.Schema(
         {
           method: {
             type: String,
-            enum: ["credit", "debit", "cash", "online", "wallet", "upi"],
+            enum: Object.values(PAYMENT_METHODS),
             required: true,
           },
           transactionId: { type: String, trim: true, default: null },
           status: {
             type: String,
-            enum: ["pending", "complete", "failed", "refunded"],
-            default: "pending",
+            enum: Object.values(TRANSACTION_STATUS),
+            default: TRANSACTION_STATUS.PENDING,
           },
           amount: { type: Number, required: true, min: 0 },
           processedAt: { type: Date, default: Date.now },
@@ -87,22 +94,14 @@ const orderSchema = new mongoose.Schema(
       balanceDue: { type: Number, required: true, default: 0 },
       paymentStatus: {
         type: String,
-        enum: ["pending", "paid", "partially_paid", "refunded"],
-        default: "pending",
+        enum: Object.values(PAYMENT_STATUS),
+        default: PAYMENT_STATUS.PENDING,
       },
     },
     orderStatus: {
       type: String,
-      enum: [
-        "pending",
-        "confirmed",
-        "preparing",
-        "ready",
-        "out_for_delivery",
-        "delivered",
-        "canceled",
-      ],
-      default: "pending",
+      enum: Object.values(ORDER_STATUS),
+      default: ORDER_STATUS.PENDING,
     },
     statusHistory: [
       {
@@ -165,7 +164,15 @@ orderSchema.pre("save", async function (next) {
   if (!this.orderId) {
     this.orderId = generateQnicOrderId();
   }
+  next();
 });
+
+// Indexes for performance
+// orderSchema.index({ restaurantId: 1, createdAt: -1 });
+// orderSchema.index({ customerId: 1, orderStatus: 1 });
+// orderSchema.index({ orderId: 1 }, { unique: true });
+// orderSchema.index({ orderStatus: 1 });
+// orderSchema.index({ 'payment.paymentStatus': 1 });
 
 const getOrderModel = (connection) => {
   return connection.model("Order", orderSchema);

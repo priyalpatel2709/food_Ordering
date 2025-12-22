@@ -11,11 +11,11 @@ const createError = require("http-errors");
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
-    const { email, restaurantsId, ...user } = req.body;
+    const { email, restaurantId, ...user } = req.body;
     const User = getUserModel(req.usersDb);
 
     // Check if restaurantsId is provided
-    if (!restaurantsId) {
+    if (!restaurantId) {
       throw createError(400, "restaurantsId ID must be provided");
     }
 
@@ -28,7 +28,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     // Create new user
     const newUser = await User.create({
       email,
-      restaurantsId,
+      restaurantId,
       ...user,
     });
 

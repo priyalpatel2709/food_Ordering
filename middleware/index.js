@@ -3,6 +3,7 @@ const identifyTenant = require("./IdentificationMiddleware");
 const { queryHandler } = require("./queryHandler");
 const { validateRequest, schemas } = require("./validationMiddleware");
 const { adminOnly, allowedRoles } = require("./roleMiddleware");
+// const requestIdMiddleware = require("./requestIdMiddleware");
 
 module.exports = {
   identifyTenant,
@@ -12,4 +13,5 @@ module.exports = {
   schemas,
   adminOnly,
   allowedRoles,
+  // requestIdMiddleware,
 };

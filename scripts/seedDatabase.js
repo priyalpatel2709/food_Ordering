@@ -1,4 +1,4 @@
-const connectToDatabase = require("../config/db");
+const {connectToDatabase} = require("../config/db");
 const {
   getCategoryModel,
   getCustomizationOptionModel,

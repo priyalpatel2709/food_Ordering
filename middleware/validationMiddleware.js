@@ -1,8 +1,5 @@
-const { de } = require("date-fns/locale");
 const Joi = require("joi");
-const {
-  processPayment,
-} = require("../controllers/order/Payment/paymentController");
+const { GENDER, ADDRESS_TYPES } = require("../utils/const");
 
 const validateRequest = (schema) => {
   return (req, res, next) => {
@@ -37,13 +34,17 @@ const schemas = {
           "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,30}$"
         )
       )
-      .message(
-        "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character"
-      ),
+      .messages({
+        'string.pattern.base': 'Password must be 6-30 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
+        'string.min': 'Password must be at least 6 characters long',
+        'string.max': 'Password must not exceed 30 characters',
+        'any.required': 'Password is required'
+      }),
     phone: Joi.string()
       .pattern(new RegExp("^[0-9]{10}$"))
       .message("Phone number must be 10 digits"),
     address: Joi.string().required().min(5),
+    gender: Joi.string().valid(...Object.values(GENDER)).optional(),
   }),
 
   // Restaurant validation schemas
@@ -94,9 +95,9 @@ const schemas = {
     orderType: Joi.string().required(),
 
     totalItemCount: Joi.number().min(1),
-    restaurantTipCharge: Joi.number().min(1),
-    deliveryCharge: Joi.number().min(1),
-    deliveryTipCharge: Joi.number().min(1),
+    restaurantTipCharge: Joi.number().min(0).default(0),
+    deliveryCharge: Joi.number().min(0).default(0),
+    deliveryTipCharge: Joi.number().min(0).default(0),
     isScheduledOrder: Joi.boolean(),
     scheduledTime: Joi.date(),
     isDeliveryOrder: Joi.boolean(),
@@ -107,6 +108,7 @@ const schemas = {
       state: Joi.string().required(),
       zipCode: Joi.string().required(),
       country: Joi.string().required(),
+      addressType: Joi.string().valid(...Object.values(ADDRESS_TYPES)).optional(),
       coordinates: Joi.object({
         lat: Joi.number().required(),
         lng: Joi.number().required(),
@@ -142,12 +144,12 @@ const schemas = {
   }),
 
   giveRefund: Joi.object({
-    amount: Joi.number().required(),
-    reason: Joi.string().required(),
+    amount: Joi.number().required().min(0),
+    reason: Joi.string().required().min(5),
   }),
 
   processPayment: Joi.object({
-    amount: Joi.number().required(),
+    amount: Joi.number().required().min(0),
     method: Joi.string().required(),
     transactionId: Joi.string().required(),
     gateway: Joi.string().allow("", null),

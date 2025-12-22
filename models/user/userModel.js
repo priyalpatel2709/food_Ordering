@@ -1,16 +1,17 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { GENDER, DEFAULTS } = require("../../utils/const");
 
 const userModel = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    gender: { type: String, enum: ["male", "female", "other"] },
+    gender: { type: String, enum: Object.values(GENDER) },
     userImage: { type: String },
     email: { type: String, unique: true, required: true },
 
     password: { type: String },
     deviceToken: { type: String, default: "" },
-    restaurantsId: { type: String, required: true },
+    restaurantId: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     age: { type: Number },
     address: [
@@ -47,7 +48,7 @@ userModel.pre("save", async function (next) {
   if (!this.isModified("password")) {
     return next();
   }
-  const salt = await bcrypt.genSalt(10);
+  const salt = await bcrypt.genSalt(DEFAULTS.BCRYPT_SALT_ROUNDS);
   this.password = await bcrypt.hash(this.password, salt);
   next(); // Ensure next() is called after hashing
 });
@@ -72,6 +73,11 @@ userModel.methods.assignRole = async function (roleId) {
     return false;
   }
 };
+
+// Indexes for performance
+// userModel.index({ email: 1, restaurantId: 1 }, { unique: true });
+// userModel.index({ restaurantId: 1 });
+// userModel.index({ isActive: 1 });
 
 const getUserModel = (connection) => {
   return connection.model("User", userModel);
