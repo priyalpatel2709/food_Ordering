@@ -34,7 +34,7 @@ const adminOnly = (req, res, next) => {
 
   if (
     userRole === "admin" &&
-    req.header("X-Restaurant-Id") === req.user.restaurantsId
+    req.header("X-Restaurant-Id") === req.user.restaurantId
   ) {
     next();
   } else {

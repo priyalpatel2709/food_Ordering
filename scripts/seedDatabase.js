@@ -1,9 +1,10 @@
-const {connectToDatabase} = require("../config/db");
+const { connectToDatabase } = require("../config/db");
 const {
   getCategoryModel,
   getCustomizationOptionModel,
   getItemModel,
   getMenuModel,
+  getTaxModel,
 } = require("../models/index");
 let userDB, restaurantDB;
 
@@ -24,6 +25,7 @@ const seedDatabase = async () => {
     const CustomizationOption = getCustomizationOptionModel(restaurantDB);
     const Item = getItemModel(restaurantDB);
     const Menu = getMenuModel(restaurantDB);
+    const Tax = getTaxModel(restaurantDB);
 
     await Category.insertMany([
       {
@@ -201,6 +203,19 @@ const seedDatabase = async () => {
       },
     ]);
 
+    const [vatTax] = await Tax.insertMany([
+      {
+        restaurantId: "restaurant_123",
+        name: "VAT",
+        percentage: 10, // ✅ FIXED 10%
+        isActive: true,
+        metaData: [
+          { key: "type", value: "standard" },
+          { key: "country", value: "GLOBAL" },
+        ],
+      },
+    ]);
+
     const categories = await Category.find({}, "_id"); // Fetch inserted categories
     const customizations = await CustomizationOption.find({}, "_id"); // Fetch inserted customizations
 
@@ -226,7 +241,7 @@ const seedDatabase = async () => {
           popularityScore: Math.floor(Math.random() * 100), // Random popularity score
           averageRating: (Math.random() * (5 - 3.5) + 3.5).toFixed(1), // Random rating 3.5 - 5
           taxable: true,
-          taxRate: "67a5c841986379debc2b8e4e", // Example Tax ID
+          taxRate: vatTax._id,
           minOrderQuantity: 1,
           maxOrderQuantity: 5,
         });

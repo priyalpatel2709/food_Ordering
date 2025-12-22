@@ -8,7 +8,7 @@ const {
   registerUser,
   deleteById,
   getAllUsers,
-  getUsersByRestaurantsId,
+  getUsersByRestaurantId,
   getAllOrders
 } = require("../../controllers/user/userController");
 
@@ -17,10 +17,10 @@ router.post("/login", identifyTenant, authUser);
 router.delete("/:id", identifyTenant, protect, deleteById);
 router.get("/allUsers", identifyTenant, protect, getAllUsers);
 router.get(
-  "/restaurant/:restaurantsId",
+  "/restaurant/:restaurantId",
   identifyTenant,
   protect,
-  getUsersByRestaurantsId
+  getUsersByRestaurantId
 );
 
 router.get("/orders", identifyTenant, protect, getAllOrders);

@@ -14,9 +14,9 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const { email, restaurantId, ...user } = req.body;
     const User = getUserModel(req.usersDb);
 
-    // Check if restaurantsId is provided
+    // Check if restaurantId is provided
     if (!restaurantId) {
-      throw createError(400, "restaurantsId ID must be provided");
+      throw createError(400, "restaurantId ID must be provided");
     }
 
     // Check if user with the same email already exists
@@ -37,7 +37,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       _id: newUser._id,
       name: newUser.name,
       email: newUser.email,
-      token: generateToken(newUser._id),
+      token: generateToken(newUser._id, restaurantId),
     });
   } catch (error) {
     // Handle validation errors
@@ -61,13 +61,15 @@ const authUser = asyncHandler(async (req, res) => {
     throw createError(401, "Invalid email or password");
   }
 
+  console.log("Does me", user.restaurantId);
+
   // Return user info and generated token
   res.json({
     _id: user._id,
     name: user.name,
     email: user.email,
-    token: generateToken(user._id),
-    restaurantsId: user.restaurantsId,
+    token: generateToken(user._id, user.restaurantId),
+    restaurantId: user.restaurantId,
   });
 });
 
@@ -88,18 +90,18 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
   roleOperations.getAll(req, res, next);
 });
 
-const getUsersByRestaurantsId = asyncHandler(async (req, res, next) => {
+const getUsersByRestaurantId = asyncHandler(async (req, res, next) => {
   try {
     const User = getUserModel(req.usersDb);
-    const { restaurantsId } = req.params;
+    const { restaurantId } = req.params;
 
-    // Validate restaurantsId
-    if (!restaurantsId) {
-      return res.status(400).json({ message: "restaurantsId is required" });
+    // Validate restaurantId
+    if (!restaurantId) {
+      return res.status(400).json({ message: "restaurantId is required" });
     }
 
-    // Fetch users by restaurantsId
-    const users = await User.find({ restaurantsId }).lean();
+    // Fetch users by restaurantId
+    const users = await User.find({ restaurantId }).lean();
 
     // Check if no users are found
     if (users.length === 0) {
@@ -170,6 +172,6 @@ module.exports = {
   authUser,
   deleteById,
   getAllUsers,
-  getUsersByRestaurantsId,
+  getUsersByRestaurantId,
   getAllOrders,
 };

@@ -22,8 +22,6 @@ const identifyTenant = async (req, res, next) => {
     restaurantId = DEFAULTS.RESTAURANT_ID;
   }
 
-  console.log(`restaurantId ${restaurantId}`);
-
   // Validate restaurantId is provided
   if (!restaurantId) {
     logger.warn("Request without restaurant ID", {

@@ -26,7 +26,7 @@ const {
 // Create new order
 router.post(
   "/",
-  validateRequest(schemas.orderCreation),
+  // validateRequest(schemas.orderCreation),
   identifyTenant,
   protect,
   createOrder

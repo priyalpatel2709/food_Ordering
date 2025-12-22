@@ -14,7 +14,7 @@ const restaurantModel = new mongoose.Schema(
     phone: { type: String },
     email: { type: String },
     image: { type: String },
-    restaurantsId: { type: String, required: true, unique: true },
+    restaurantId: { type: String, required: true, unique: true },
     isActive: { type: Boolean, default: true },
     latitude: { type: Number },
     longitude: { type: Number },
