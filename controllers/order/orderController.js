@@ -160,6 +160,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
     const orderData = {
       ...req.body,
       customerId: req.user._id,
+      restaurantId: `restaurant_${req.restaurantId}`,
       orderItems,
       subtotal,
       tax: {

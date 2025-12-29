@@ -38,6 +38,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       name: newUser.name,
       email: newUser.email,
       token: generateToken(newUser._id, restaurantId),
+      restaurantId: newUser.restaurantId,
     });
   } catch (error) {
     // Handle validation errors
