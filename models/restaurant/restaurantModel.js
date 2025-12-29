@@ -39,6 +39,9 @@ const restaurantModel = new mongoose.Schema(
         value: mongoose.Schema.Types.Mixed,
       },
     ],
+    tableConfiguration: {
+      totalTables: { type: Number, default: 0 },
+    },
   },
   { timestamps: true }
 );

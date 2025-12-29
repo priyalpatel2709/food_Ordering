@@ -25,6 +25,19 @@ const {
   // trackOrder
 } = require("../../controllers/order/orderController");
 
+const {
+  getTablesStatus,
+  createDineInOrder,
+  addItemsToOrder,
+  completeDineInCheckout
+} = require("../../controllers/order/dineInController");
+
+// Dine-In Routes
+router.get("/tables", identifyTenant, protect, getTablesStatus);
+router.post("/dine-in", identifyTenant, protect, createDineInOrder);
+router.put("/dine-in/:orderId/items", identifyTenant, protect, addItemsToOrder);
+router.post("/dine-in/:orderId/pay", identifyTenant, protect, completeDineInCheckout);
+
 router.get("/my-orders", identifyTenant, protect, getUserOrders);
 
 // Create order with payment (atomic transaction)

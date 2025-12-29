@@ -1,3 +1,6 @@
+const dotenv = require("dotenv");
+dotenv.config();
+
 const { connectToDatabase } = require("../config/db");
 const {
   getCategoryModel,
@@ -5,6 +8,7 @@ const {
   getItemModel,
   getMenuModel,
   getTaxModel,
+  getRestaurantModel,
 } = require("../models/index");
 let userDB, restaurantDB;
 
@@ -26,6 +30,33 @@ const seedDatabase = async () => {
     const Item = getItemModel(restaurantDB);
     const Menu = getMenuModel(restaurantDB);
     const Tax = getTaxModel(restaurantDB);
+    const Restaurant = getRestaurantModel(restaurantDB);
+
+    // await Restaurant.deleteMany({ restaurantId: "restaurant_123" });
+    await Restaurant.create({
+      restaurantId: "restaurant_123",
+      name: "Tasty Bytes",
+      address: "123 Food Street, Tech City",
+      operatingHours: {
+        Monday: { openTime: "08:00", closeTime: "22:00" },
+        Tuesday: { openTime: "08:00", closeTime: "22:00" },
+        Wednesday: { openTime: "08:00", closeTime: "22:00" },
+        Thursday: { openTime: "08:00", closeTime: "22:00" },
+        Friday: { openTime: "08:00", closeTime: "22:00" },
+        Saturday: { openTime: "08:00", closeTime: "22:00" },
+        Sunday: { openTime: "08:00", closeTime: "22:00" },
+      },
+      phone: "555-0123",
+      email: "contact@tastybytes.com",
+      isActive: true,
+      cuisineType: ["American", "Italian"],
+      tableConfiguration: {
+        totalTables: 15,
+      },
+      acceptsOnlineOrders: true,
+      acceptsReservations: true,
+      paymentMethods: ["cash", "credit", "online"],
+    });
 
     await Category.insertMany([
       {
@@ -228,7 +259,7 @@ const seedDatabase = async () => {
           name: `${category.name} Item ${i}`,
           description: `Delicious ${category.name} item ${i}`,
           price: Math.floor(Math.random() * 10) + 5, // Random price between 5 and 15
-          image: `https://example.com/${category.name}_item${i}.jpg`,
+          image: `https://tse4.mm.bing.net/th/id/OIP.eoBSdHfQ0ThaJV8tcP-5FwHaF7?rs=1&pid=ImgDetMain&o=7&rm=3`,
           isAvailable: true,
           preparationTime: Math.floor(Math.random() * 10) + 10, // Random prep time 10-20 min
           allergens: ["Dairy", "Gluten"],
@@ -271,7 +302,7 @@ const seedDatabase = async () => {
           item: item._id,
           defaultPrice: 10,
         })),
-        taxes: ["67a5c841986379debc2b8e4e"],
+        taxes: [vatTax._id],
       },
       {
         restaurantId: "restaurant_123",
@@ -293,7 +324,7 @@ const seedDatabase = async () => {
           item: item._id,
           defaultPrice: 15,
         })),
-        taxes: ["67a5c841986379debc2b8e4e"],
+        taxes: [vatTax._id],
       },
 
       {
@@ -336,7 +367,7 @@ const seedDatabase = async () => {
           item: item._id,
           defaultPrice: 15,
         })),
-        taxes: ["67a5c841986379debc2b8e4e"],
+        taxes: [vatTax._id],
       },
       {
         restaurantId: "restaurant_123",
@@ -378,7 +409,7 @@ const seedDatabase = async () => {
           item: item._id,
           defaultPrice: 15,
         })),
-        taxes: ["67a5c841986379debc2b8e4e"],
+        taxes: [vatTax._id],
       },
       {
         restaurantId: "restaurant_123",
@@ -420,7 +451,7 @@ const seedDatabase = async () => {
           item: item._id,
           defaultPrice: 15,
         })),
-        taxes: ["67a5c841986379debc2b8e4e"],
+        taxes: [vatTax._id],
       },
       {
         restaurantId: "restaurant_123",
@@ -499,7 +530,7 @@ const seedDatabase = async () => {
             endTime: "21:00",
           },
         })),
-        taxes: ["67a5c841986379debc2b8e4e"],
+        taxes: [vatTax._id],
       },
     ]);
 
