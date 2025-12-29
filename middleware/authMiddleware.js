@@ -9,16 +9,16 @@ const { HTTP_STATUS } = require("../utils/const");
  */
 const protect = asyncHandler(async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
-  
+
   if (!token) {
-    logger.warn('Authentication attempt without token', { 
+    logger.warn("Authentication attempt without token", {
       ip: req.ip,
       path: req.path,
-      method: req.method
+      method: req.method,
     });
-    return res.status(HTTP_STATUS.UNAUTHORIZED).json({ 
-      status: 'error',
-      error: "Not authorized, no token provided" 
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      status: "error",
+      error: "Not authorized, no token provided",
     });
   }
 
@@ -28,38 +28,40 @@ const protect = asyncHandler(async (req, res, next) => {
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      logger.warn('Token valid but user not found', { 
+      logger.warn("Token valid but user not found", {
         userId: decoded.id,
-        ip: req.ip 
+        restaurantId: decoded.restaurantId,
+        ip: req.ip,
       });
-      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ 
-        status: 'error',
-        error: "User not found" 
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        status: "error",
+        error: "User not found",
       });
     }
 
     if (!user.isActive) {
-      logger.warn('Inactive user attempted access', { 
+      logger.warn("Inactive user attempted access", {
         userId: user._id,
-        email: user.email 
+        email: user.email,
       });
-      return res.status(HTTP_STATUS.FORBIDDEN).json({ 
-        status: 'error',
-        error: "Account is inactive" 
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
+        status: "error",
+        error: "Account is inactive",
       });
     }
 
     req.user = user;
+
     next();
   } catch (error) {
-    logger.warn('Invalid token attempt', { 
+    logger.warn("Invalid token attempt", {
       error: error.message,
       ip: req.ip,
-      path: req.path
+      path: req.path,
     });
-    return res.status(HTTP_STATUS.UNAUTHORIZED).json({ 
-      status: 'error',
-      error: "Not authorized, token invalid" 
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      status: "error",
+      error: "Not authorized, token invalid",
     });
   }
 });

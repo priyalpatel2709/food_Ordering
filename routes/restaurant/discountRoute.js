@@ -11,8 +11,8 @@ const {
   updateById,
 } = require("../../controllers/restaurant/discountController");
 
-router.post("/createDiscount", identifyTenant, protect, createDiscount);
-router.get("/", identifyTenant, protect, getAllDiscounts);
+router.post("/createDiscount", identifyTenant, createDiscount);
+router.get("/", identifyTenant, getAllDiscounts);
 router.get("/:id", identifyTenant, protect, getDiscountById);
 router.delete("/:id", identifyTenant, protect, deleteById);
 router.put("/:id", identifyTenant, protect, updateById);

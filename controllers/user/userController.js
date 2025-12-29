@@ -61,8 +61,6 @@ const authUser = asyncHandler(async (req, res) => {
     throw createError(401, "Invalid email or password");
   }
 
-  console.log("Does me", user.restaurantId);
-
   // Return user info and generated token
   res.json({
     _id: user._id,

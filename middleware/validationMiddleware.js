@@ -155,6 +155,83 @@ const schemas = {
     gateway: Joi.string().allow("", null),
     notes: Joi.string().allow("", null),
   }),
+
+  // Order with payment validation schema (atomic transaction)
+  orderWithPayment: Joi.object({
+    restaurantId: Joi.required(),
+    tax: Joi.array().items(Joi.string()).optional(),
+    menuId: Joi.string().optional(),
+    discount: Joi.array().items(Joi.string()).optional(),
+
+    orderNote: Joi.string().allow("", null),
+    orderType: Joi.string().optional(),
+
+    restaurantTipCharge: Joi.number().min(0).default(0),
+    deliveryCharge: Joi.number().min(0).default(0),
+    deliveryTipCharge: Joi.number().min(0).default(0),
+    isScheduledOrder: Joi.boolean().default(false),
+    scheduledTime: Joi.date().when("isScheduledOrder", {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    }),
+    isDeliveryOrder: Joi.boolean().default(false),
+
+    deliveryAddress: Joi.object({
+      street: Joi.string().required(),
+      city: Joi.string().required(),
+      state: Joi.string().required(),
+      zipCode: Joi.string().required(),
+      country: Joi.string().required(),
+      addressType: Joi.string().valid(...Object.values(ADDRESS_TYPES)).optional(),
+      coordinates: Joi.object({
+        lat: Joi.number().required(),
+        lng: Joi.number().required(),
+      }).optional(),
+    }).when("isDeliveryOrder", {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    }),
+
+    contactName: Joi.string().required().min(2),
+    contactPhone: Joi.string()
+      .pattern(/^[0-9]{10,15}$/)
+      .required(),
+    contactEmail: Joi.string().email().optional(),
+
+    tableNumber: Joi.string().optional(),
+    serverName: Joi.string().optional(),
+
+    orderItems: Joi.array()
+      .items(
+        Joi.object({
+          item: Joi.string().required(),
+          quantity: Joi.number().required().min(1),
+          specialInstructions: Joi.string().allow("", null),
+          modifiers: Joi.array()
+            .items(
+              Joi.object({
+                name: Joi.string().required(),
+                price: Joi.number().min(0).optional(),
+              })
+            )
+            .optional(),
+        })
+      )
+      .min(1)
+      .required(),
+
+    // Payment information (required for this endpoint)
+    payment: Joi.object({
+      method: Joi.string()
+        .valid("credit", "debit", "cash", "online", "wallet", "upi")
+        .required(),
+      transactionId: Joi.string().optional(),
+      gateway: Joi.string().optional(),
+      notes: Joi.string().max(500).optional(),
+    }).required(),
+  }),
 };
 
 module.exports = {

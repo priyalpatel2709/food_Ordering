@@ -9,6 +9,13 @@ const {
   getDiscountModel,
 } = require("../../models/index");
 const { getQueryParams } = require("../../utils/utils");
+const { logger } = require("../../middleware/loggingMiddleware");
+const {
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+  TRANSACTION_STATUS,
+  HTTP_STATUS,
+} = require("../../utils/const");
 
 const createOrder = asyncHandler(async (req, res, next) => {
   try {
@@ -77,7 +84,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
         // Return processed item
         return {
           ...orderItem,
-          item: item._id,
+          item: item,
           price,
           discountPrice,
           quantity,
@@ -247,6 +254,38 @@ const getAllOrders = asyncHandler(async (req, res, next) => {
   orderOperations.getAll(req, res, next);
 });
 
+const getUserOrders = async (req, res) => {
+  try {
+    const Order = getOrderModel(req.restaurantDb);
+    const Item = getItemModel(req.restaurantDb);
+
+    const orders = await Order.find({ customerId: req.user._id })
+      .sort({ createdAt: -1 })
+      .populate([{ path: "orderItems.item", model: Item }]);
+
+    res.status(200).json({
+      status: "success",
+      results: orders.length,
+      data: {
+        orders,
+      },
+    });
+  } catch (error) {
+    // logger.error("Error fetching user orders:", {
+    //   error: error.message,
+    //   userId: req.user._id,
+    // });
+    res.status(500).json({
+      status: "error",
+      message: "Error fetching orders",
+      // error:
+      //   process.env.NODE_ENV === "production"
+      //     ? "Internal server error"
+      //     : error.message,
+    });
+  }
+};
+
 const getOrderById = asyncHandler(async (req, res, next) => {
   const Order = getOrderModel(req.restaurantDb);
   const OrderType = getOrderTypeModel(req.restaurantDb);
@@ -306,6 +345,311 @@ const deleteAll = asyncHandler(async (req, res, next) => {
   orderOperations.deleteAll(req, res, next);
 });
 
+const createOrderWithPayment = asyncHandler(async (req, res) => {
+  try {
+    // Get models from database connection
+    const Order = getOrderModel(req.restaurantDb);
+    const Item = getItemModel(req.restaurantDb);
+    const Tax = getTaxModel(req.restaurantDb);
+    const Discount = getDiscountModel(req.restaurantDb);
+
+    // Extract data from request body
+    const {
+      orderItems: clientOrderItems,
+      tax: taxIds = [],
+      discount: discountIds = [],
+      restaurantTipCharge = 0,
+      deliveryCharge = 0,
+      deliveryTipCharge = 0,
+      payment: paymentInfo,
+      ...orderData
+    } = req.body;
+
+    // ==================== VALIDATION ====================
+
+    // Validate order items
+    if (!clientOrderItems || clientOrderItems.length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        status: "error",
+        message: "Order must contain at least one item",
+      });
+    }
+
+    // Validate payment information
+    if (!paymentInfo || !paymentInfo.method) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        status: "error",
+        message: "Payment information is required",
+      });
+    }
+
+    const { method, transactionId, gateway, notes } = paymentInfo;
+
+    // Validate payment method
+    const validPaymentMethods = [
+      "credit",
+      "debit",
+      "cash",
+      "online",
+      "wallet",
+      "upi",
+    ];
+    if (!validPaymentMethods.includes(method)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        status: "error",
+        message: `Invalid payment method. Allowed: ${validPaymentMethods.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // ==================== FETCH ITEMS ====================
+
+    // Batch fetch all items in a single query
+    const itemIds = clientOrderItems.map((item) => item.item);
+    const items = await Item.find({ _id: { $in: itemIds } });
+
+    // Create a map for quick lookup
+    const itemsMap = {};
+    items.forEach((item) => {
+      itemsMap[item._id.toString()] = item;
+    });
+
+    // ==================== CALCULATE PRICES ====================
+
+    let subtotal = 0;
+    const invalidItems = [];
+    const processedOrderItems = [];
+
+    // Process each order item
+    for (const orderItem of clientOrderItems) {
+      const item = itemsMap[orderItem.item];
+
+      // Validate item exists
+      if (!item) {
+        invalidItems.push(orderItem.item);
+        continue;
+      }
+
+      // Validate item availability
+      if (!item.isAvailable) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          status: "error",
+          message: `Item "${item.name}" is currently unavailable`,
+        });
+      }
+
+      const quantity = parseInt(orderItem.quantity) || 1;
+
+      // SECURITY: Always use server-side price, never trust client
+      const price = Number(item.price);
+
+      // Calculate modifiers price if any
+      let modifiersTotal = 0;
+      if (orderItem.modifiers && Array.isArray(orderItem.modifiers)) {
+        modifiersTotal = orderItem.modifiers.reduce((sum, mod) => {
+          return sum + (Number(mod.price) || 0);
+        }, 0);
+      }
+
+      const itemTotal = (price + modifiersTotal) * quantity;
+      subtotal += itemTotal;
+
+      processedOrderItems.push({
+        item: item._id,
+        quantity,
+        price,
+        specialInstructions: orderItem.specialInstructions || "",
+        modifiers: orderItem.modifiers || [],
+      });
+    }
+
+    // Check for invalid items
+    if (invalidItems.length > 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        status: "error",
+        message: "Some items in your order don't exist",
+        invalidItems,
+      });
+    }
+
+    // ==================== CALCULATE TAXES ====================
+
+    let taxCharge = 0;
+    const taxBreakdown = [];
+
+    if (taxIds.length > 0) {
+      const taxes = await Tax.find({ _id: { $in: taxIds } });
+
+      for (const taxDoc of taxes) {
+        const charge = parseFloat(
+          ((subtotal * taxDoc.percentage) / 100).toFixed(2)
+        );
+        taxCharge += charge;
+
+        taxBreakdown.push({
+          taxId: taxDoc._id,
+          taxCharge: charge,
+        });
+      }
+    }
+
+    // ==================== CALCULATE DISCOUNTS ====================
+
+    let discountCharge = 0;
+    const discountBreakdown = [];
+
+    if (discountIds.length > 0) {
+      const discounts = await Discount.find({ _id: { $in: discountIds } });
+
+      for (const discountDoc of discounts) {
+        let amount = 0;
+
+        if (discountDoc.type === "fixed") {
+          amount = parseFloat(discountDoc.value);
+        } else if (discountDoc.type === "percentage") {
+          amount = parseFloat(
+            ((discountDoc.value * subtotal) / 100).toFixed(2)
+          );
+        }
+
+        discountCharge += amount;
+
+        discountBreakdown.push({
+          discountId: discountDoc._id,
+          discountAmount: amount,
+        });
+      }
+    }
+
+    // ==================== CALCULATE FINAL CHARGE ====================
+
+    // Format all monetary values to 2 decimal places
+    subtotal = parseFloat(subtotal.toFixed(2));
+    taxCharge = parseFloat(taxCharge.toFixed(2));
+    discountCharge = parseFloat(discountCharge.toFixed(2));
+    const restaurantTip = parseFloat(Number(restaurantTipCharge).toFixed(2));
+    const delivery = parseFloat(Number(deliveryCharge).toFixed(2));
+    const deliveryTip = parseFloat(Number(deliveryTipCharge).toFixed(2));
+
+    // Calculate final order charge
+    const orderFinalCharge = parseFloat(
+      (
+        subtotal +
+        taxCharge +
+        restaurantTip +
+        delivery +
+        deliveryTip -
+        discountCharge
+      ).toFixed(2)
+    );
+
+    // Validate final charge is positive
+    if (orderFinalCharge <= 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        status: "error",
+        message: "Order total must be greater than zero",
+      });
+    }
+
+    // ==================== CREATE PAYMENT ENTRY ====================
+
+    const paymentEntry = {
+      method,
+      transactionId: transactionId || null,
+      status: TRANSACTION_STATUS.COMPLETE,
+      amount: orderFinalCharge,
+      processedAt: new Date(),
+      processedBy: req.user?._id || null,
+      gateway: gateway || null,
+      notes: notes || "",
+    };
+
+    // ==================== CREATE ORDER ====================
+
+    const newOrderData = {
+      ...orderData,
+      restaurantId: req.restaurantId,
+      customerId: req.user._id,
+      orderItems: processedOrderItems,
+      subtotal,
+      restaurantTipCharge: restaurantTip,
+      deliveryCharge: delivery,
+      deliveryTipCharge: deliveryTip,
+      tax: {
+        taxes: taxBreakdown,
+        totalTaxAmount: taxCharge,
+      },
+      discount: {
+        discounts: discountBreakdown,
+        totalDiscountAmount: discountCharge,
+      },
+      orderFinalCharge,
+      totalItemCount: processedOrderItems.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+      ),
+      payment: {
+        history: [paymentEntry],
+        totalPaid: orderFinalCharge,
+        balanceDue: 0,
+        paymentStatus: PAYMENT_STATUS.PAID,
+      },
+      orderStatus: ORDER_STATUS.CONFIRMED,
+    };
+
+    // Create and save order
+    const newOrder = new Order(newOrderData);
+    const savedOrder = await newOrder.save();
+
+    // Log successful order creation
+    logger.info("Order created with payment", {
+      orderId: savedOrder.orderId,
+      customerId: req.user._id,
+      amount: orderFinalCharge,
+      paymentMethod: method,
+    });
+
+    // ==================== RETURN RESPONSE ====================
+
+    res.status(HTTP_STATUS.CREATED).json({
+      status: "success",
+      message: "Order created and payment processed successfully",
+      data: {
+        order: savedOrder,
+        summary: {
+          orderId: savedOrder.orderId,
+          subtotal,
+          tax: taxCharge,
+          discount: discountCharge,
+          deliveryCharge: delivery,
+          tips: restaurantTip + deliveryTip,
+          total: orderFinalCharge,
+          paymentStatus: PAYMENT_STATUS.PAID,
+          orderStatus: ORDER_STATUS.CONFIRMED,
+        },
+      },
+    });
+  } catch (error) {
+    // Log error for debugging
+    logger.error("Order creation with payment error", {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?._id,
+    });
+
+    // Send appropriate error response
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: "Failed to create order with payment. Please try again.",
+      error:
+        process.env.NODE_ENV === "production"
+          ? "Internal server error"
+          : error.message,
+    });
+  }
+});
+
 module.exports = {
   createOrder,
   getAllOrders,
@@ -313,4 +657,6 @@ module.exports = {
   deleteById,
   updateById,
   deleteAll,
+  getUserOrders,
+  createOrderWithPayment,
 };

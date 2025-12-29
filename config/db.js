@@ -25,8 +25,6 @@ const getDatabaseUri = (restaurantId) => {
  * @throws {Error} If connection fails
  */
 const connectToDatabase = async (restaurantId) => {
-  console.log("connectToDatabase restaurantId", restaurantId);
-
   // Return existing connection if available
   if (connections[restaurantId]) {
     // Check if connection is still alive

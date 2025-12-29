@@ -17,13 +17,26 @@ const {
   deleteById,
   updateById,
   deleteAll,
+  getUserOrders,
+  createOrderWithPayment,
   // getOrderDetails,
   // updateOrderStatus,
   // cancelOrder,
   // trackOrder
 } = require("../../controllers/order/orderController");
 
-// Create new order
+router.get("/my-orders", identifyTenant, protect, getUserOrders);
+
+// Create order with payment (atomic transaction)
+router.post(
+  "/create-with-payment",
+  validateRequest(schemas.orderWithPayment),
+  identifyTenant,
+  protect,
+  createOrderWithPayment
+);
+
+// Create new order (without immediate payment)
 router.post(
   "/",
   // validateRequest(schemas.orderCreation),
