@@ -18,6 +18,7 @@ const {
   orderRoutes,
   orderTypeRoutes,
   paymentRoutes,
+  kdsRoutes,
 } = require("./order/index");
 
 module.exports = {
@@ -33,4 +34,5 @@ module.exports = {
   orderTypeRoutes,
   paymentRoutes,
   menuRouteV2,
+  kdsRoutes,
 };

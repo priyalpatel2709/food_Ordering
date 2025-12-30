@@ -132,8 +132,10 @@ const orderSchema = new mongoose.Schema(
             price: { type: Number },
           },
         ],
+        itemStatus: { type: String, default: 'new' }, // KDS status for individual item
       },
     ],
+    kdsStatus: { type: String, default: 'new' }, // Overall KDS status
     preparationTimeEstimate: { type: Number }, // Added for kitchen estimates
     preparationStartTime: { type: Date },
     preparationEndTime: { type: Date },

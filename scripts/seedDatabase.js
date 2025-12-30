@@ -9,6 +9,7 @@ const {
   getMenuModel,
   getTaxModel,
   getRestaurantModel,
+  getDiscountModel,
 } = require("../models/index");
 let userDB, restaurantDB;
 
@@ -31,6 +32,7 @@ const seedDatabase = async () => {
     const Menu = getMenuModel(restaurantDB);
     const Tax = getTaxModel(restaurantDB);
     const Restaurant = getRestaurantModel(restaurantDB);
+    const Discount = getDiscountModel(restaurantDB);
 
     // await Restaurant.deleteMany({ restaurantId: "restaurant_123" });
     await Restaurant.create({
@@ -53,9 +55,11 @@ const seedDatabase = async () => {
       tableConfiguration: {
         totalTables: 15,
       },
-      acceptsOnlineOrders: true,
+      acceptsOnlineOrders: false,
       acceptsReservations: true,
       paymentMethods: ["cash", "credit", "online"],
+      kdsConfiguration: { workflow: ["new", "start", "prepared", "ready"] },
+      capacity: 150,
     });
 
     await Category.insertMany([
@@ -247,6 +251,20 @@ const seedDatabase = async () => {
       },
     ]);
 
+    await Discount.insertMany([
+      {
+        restaurantId: "restaurant_123",
+        type: "percentage",
+        discountName: "NEW_2026",
+        value: 26, // ✅ FIXED 10%
+        isActive: true,
+        metaData: [
+          { key: "type", value: "standard" },
+          { key: "country", value: "GLOBAL" },
+        ],
+      },
+    ]);
+
     const categories = await Category.find({}, "_id"); // Fetch inserted categories
     const customizations = await CustomizationOption.find({}, "_id"); // Fetch inserted customizations
 
@@ -258,7 +276,7 @@ const seedDatabase = async () => {
           category: category._id,
           name: `${category.name} Item ${i}`,
           description: `Delicious ${category.name} item ${i}`,
-          price: Math.floor(Math.random() * 10) + 5, // Random price between 5 and 15
+          price: +(Math.random() * 10 + 5).toFixed(2), // Random price between 5 and 15
           image: `https://tse4.mm.bing.net/th/id/OIP.eoBSdHfQ0ThaJV8tcP-5FwHaF7?rs=1&pid=ImgDetMain&o=7&rm=3`,
           isAvailable: true,
           preparationTime: Math.floor(Math.random() * 10) + 10, // Random prep time 10-20 min

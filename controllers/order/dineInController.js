@@ -19,63 +19,73 @@ const { logger } = require("../../middleware/loggingMiddleware");
 // Helper to recalculate order totals
 const recalculateOrderTotals = async (order, restaurantDb) => {
   const Item = getItemModel(restaurantDb);
+  // Tax and Discount models are needed if we were fetching by ID, 
+  // but here we populate via Mongoose
   const Tax = getTaxModel(restaurantDb);
   const Discount = getDiscountModel(restaurantDb);
 
-  // Populate items if not populated
-  await order.populate("orderItems.item");
+  // Populate items with taxRate
+  // We need the tax documents physically to get the percentage
+  await order.populate({
+    path: "orderItems.item",
+    populate: { path: "taxRate", model: Tax } 
+  });
 
   let subtotal = 0;
+  // Use a map to accumulate tax amounts per Tax ID
+  let accumulatedTaxes = {}; // { [taxId]: { taxId, percentage, taxCharge } }
 
-  // Calculate subtotal from items
+  // Iterate over Order Items
   for (const orderItem of order.orderItems) {
     if (!orderItem.item) continue;
 
-    // Use the price stored in the order item if available (to lock price at ordering),
-    // or current item price?
-    // Usually we trust the price set when item was added.
-    // In this architecture, orderItem.price is set.
-
+    // Price and Quantity
     const price = orderItem.price || 0;
     const quantity = orderItem.quantity || 1;
 
+    // Calculate Item Total (including modifiers)
     let modifiersTotal = 0;
     if (orderItem.modifiers && Array.isArray(orderItem.modifiers)) {
       modifiersTotal = orderItem.modifiers.reduce(
-        (sum, mod) => sum + (mod.price || 0),
+        (sum, mod) => sum + (Number(mod.price) || 0),
         0
       );
     }
+    const lineItemTotal = (price + modifiersTotal) * quantity;
+    
+    // Add to Subtotal
+    subtotal += lineItemTotal;
 
-    subtotal += (price + modifiersTotal) * quantity;
-  }
-
-  // Taxes
-  let taxCharge = 0;
-  const taxBreakdown = [];
-  if (order.tax && order.tax.taxes) {
-    // We might need to re-fetch tax rates if we want dynamic, or use stored.
-    // Stored IDs are in order.tax.taxes.
-    // If we want to recalculate properly, we should refetch tax docs using IDs.
-    // But extracting IDs from the breakdown might be hard if we only store breakdown.
-    // Actually order schema stores tax.taxes as [{ taxId, taxCharge }].
-    const taxIds = order.tax.taxes.map((t) => t.taxId);
-    if (taxIds.length > 0) {
-      const taxes = await Tax.find({ _id: { $in: taxIds } });
-      for (const taxDoc of taxes) {
-        const charge = parseFloat(
-          ((subtotal * taxDoc.percentage) / 100).toFixed(2)
-        );
-        taxCharge += charge;
-        taxBreakdown.push({
-          taxId: taxDoc._id,
-          taxCharge: charge,
-        });
-      }
+    // Calculate Item-Level Tax
+    // Check if item is taxable and has tax rates
+    if (orderItem.item.taxable && orderItem.item.taxRate && orderItem.item.taxRate.length > 0) {
+       for (const taxDoc of orderItem.item.taxRate) {
+           // Ensure taxDoc is populated and valid
+           if (taxDoc && typeof taxDoc.percentage === 'number') {
+               const taxAmount = (lineItemTotal * taxDoc.percentage) / 100;
+               
+               if (!accumulatedTaxes[taxDoc._id.toString()]) {
+                   accumulatedTaxes[taxDoc._id.toString()] = {
+                       taxId: taxDoc._id,
+                       percentage: taxDoc.percentage,
+                       taxCharge: 0
+                   };
+               }
+               accumulatedTaxes[taxDoc._id.toString()].taxCharge += taxAmount;
+           }
+       }
     }
   }
 
-  // Discounts
+  // Construct Tax Breakdown Array
+  const taxBreakdown = Object.values(accumulatedTaxes).map(t => ({
+      taxId: t.taxId,
+      taxCharge: parseFloat(t.taxCharge.toFixed(2))
+  }));
+  
+  const totalTaxAmount = parseFloat(taxBreakdown.reduce((sum, t) => sum + t.taxCharge, 0).toFixed(2));
+
+  // Discounts (Global Discounts Logic - applied to subtotal usually)
   let discountCharge = 0;
   const discountBreakdown = [];
   if (order.discount && order.discount.discounts) {
@@ -100,20 +110,19 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
     }
   }
 
-  // Tips & Delivery (Dine in usually no delivery charge, maybe service charge?)
-  // We keep existing values
+  // Tips & Delivery
   const restaurantTip = order.restaurantTipCharge || 0;
   const delivery = order.deliveryCharge || 0;
   const deliveryTip = order.deliveryTipCharge || 0;
 
   subtotal = parseFloat(subtotal.toFixed(2));
-  taxCharge = parseFloat(taxCharge.toFixed(2));
   discountCharge = parseFloat(discountCharge.toFixed(2));
+  // Tax is already fixed per item accumulation, but total is fixed.
 
   const orderFinalCharge = parseFloat(
     (
       subtotal +
-      taxCharge +
+      totalTaxAmount +
       restaurantTip +
       delivery +
       deliveryTip -
@@ -123,7 +132,10 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
 
   // Update Order
   order.subtotal = subtotal;
-  order.tax = { taxes: taxBreakdown, totalTaxAmount: taxCharge };
+  order.tax = { 
+      taxes: taxBreakdown, 
+      totalTaxAmount: totalTaxAmount 
+  };
   order.discount = {
     discounts: discountBreakdown,
     totalDiscountAmount: discountCharge,
@@ -280,7 +292,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
   // For simplicity, we create basic PENDING order.
 
   const newOrder = new Order({
-    restaurantId: req.restaurantId,
+    restaurantId: `restaurant_${req.restaurantId}`,
     customerId: req.user._id, // Waiter ID or Customer ID? Requirement says "A waiter can create...". So req.user is Waiter.
     tableNumber: tableNumber.toString(),
     serverName: req.user.name,
@@ -291,13 +303,9 @@ const createDineInOrder = asyncHandler(async (req, res) => {
     // ... other defaults
   });
 
-  // Auto-calc taxes if configured? User didn't specify.
-  // We'll rely on addItemToOrder to refine calculations or `update` explicitly.
-  // But better to save correct state.
-
   const savedOrder = await newOrder.save();
 
-  // If items were added, maybe run recalculate just to be sure
+  // If items were added, run recalculate (taxes are derived from items now)
   if (items.length > 0) {
     const reCalced = await recalculateOrderTotals(savedOrder, req.restaurantDb);
     await reCalced.save();
