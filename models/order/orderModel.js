@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 const { generateQnicOrderId } = require("../../utils/utils");
-const { 
-  ORDER_STATUS, 
-  PAYMENT_METHODS, 
-  PAYMENT_STATUS, 
+const {
+  ORDER_STATUS,
+  PAYMENT_METHODS,
+  PAYMENT_STATUS,
   TRANSACTION_STATUS,
-  ADDRESS_TYPES 
+  ADDRESS_TYPES,
 } = require("../../utils/const");
 
 const orderSchema = new mongoose.Schema(
@@ -132,15 +132,15 @@ const orderSchema = new mongoose.Schema(
             price: { type: Number },
           },
         ],
-        itemStatus: { type: String, default: 'new' }, // KDS status for individual item
+        itemStatus: { type: String, default: "new" },
       },
     ],
-    kdsStatus: { type: String, default: 'new' }, // Overall KDS status
-    preparationTimeEstimate: { type: Number }, // Added for kitchen estimates
+    kdsStatus: { type: String, default: "new" },
+    preparationTimeEstimate: { type: Number },
     preparationStartTime: { type: Date },
     preparationEndTime: { type: Date },
-    tableNumber: { type: String }, // Added for dine-in orders
-    serverName: { type: String }, // Added for dine-in orders
+    tableNumber: { type: String },
+    serverName: { type: String },
     metaData: [
       {
         key: { type: String },

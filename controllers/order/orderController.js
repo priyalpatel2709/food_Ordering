@@ -73,13 +73,37 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
         const quantity = parseInt(orderItem.quantity) || 1;
         const price = Number(item.price);
+
+        let modifiersTotal = 0;
+        let safeModifiers = [];
+
+        console.log("safeModifiers ", orderItem.customizationOptions);
+
+        if (
+          orderItem.customizationOptions &&
+          Array.isArray(orderItem.customizationOptions)
+        ) {
+          safeModifiers = orderItem.customizationOptions.map((m) => ({
+            name: m.name ? String(m.name) : "Option",
+            price: Number(m.price) || 0,
+          }));
+          modifiersTotal = safeModifiers.reduce((sum, m) => sum + m.price, 0);
+        }
+
         const discountPrice =
           orderItem.price && orderItem.price !== price
             ? Number(price - orderItem.price)
             : 0;
 
-        // Add to subtotal
-        subtotal += price * quantity;
+        // Add to subtotal (price + modifiers) * quantity
+        subtotal += (price + modifiersTotal) * quantity;
+
+        console.log(
+          "safeModifiers ",
+          safeModifiers,
+          orderItem.modifiers,
+          orderItem
+        );
 
         // Return processed item
         return {
@@ -88,6 +112,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
           price,
           discountPrice,
           quantity,
+          modifiers: safeModifiers,
         };
       })
       .filter(Boolean); // Remove null items

@@ -271,9 +271,16 @@ const createDineInOrder = asyncHandler(async (req, res) => {
       if (dbItem) {
         const price = Number(dbItem.price);
         const quantity = Number(i.quantity) || 1;
-        let modTotal = 0;
-        if (i.modifiers)
-          modTotal = i.modifiers.reduce((s, m) => s + (m.price || 0), 0);
+        
+        let safeModifiers = [];
+        if (i.modifiers && Array.isArray(i.modifiers)) {
+          safeModifiers = i.modifiers.map(m => ({
+            name: m.name ? String(m.name) : "Option",
+            price: Number(m.price) || 0
+          }));
+        }
+
+        const modTotal = safeModifiers.reduce((s, m) => s + m.price, 0);
 
         subtotal += (price + modTotal) * quantity;
         orderItems.push({
@@ -281,7 +288,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
           quantity,
           price,
           specialInstructions: i.specialInstructions,
-          modifiers: i.modifiers,
+          modifiers: safeModifiers,
         });
       }
     }
@@ -349,16 +356,20 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
 
     const price = Number(dbItem.price);
     const quantity = Number(i.quantity) || 1;
-    let modTotal = 0;
-    if (i.modifiers)
-      modTotal = i.modifiers.reduce((s, m) => s + (m.price || 0), 0);
+    
+    let safeModifiers = [];
+    if (i.modifiers && Array.isArray(i.modifiers)) {
+      safeModifiers = i.modifiers.map(m => ({
+        name: m.name ? String(m.name) : "Option",
+        price: Number(m.price) || 0
+      }));
+    }
 
     order.orderItems.push({
       item: dbItem._id,
       quantity,
       price,
-      price,
-      modifiers: i.modifiers,
+      modifiers: safeModifiers,
       specialInstructions: i.specialInstructions,
     });
   }
