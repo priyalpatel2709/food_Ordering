@@ -10,6 +10,7 @@ const {
   getTaxModel,
   getRestaurantModel,
   getDiscountModel,
+  getOrderTypeModel,
 } = require("../models/index");
 let userDB, restaurantDB;
 
@@ -33,6 +34,7 @@ const seedDatabase = async () => {
     const Tax = getTaxModel(restaurantDB);
     const Restaurant = getRestaurantModel(restaurantDB);
     const Discount = getDiscountModel(restaurantDB);
+    const OrderType = getOrderTypeModel(restaurantDB);
 
     // await Restaurant.deleteMany({ restaurantId: "restaurant_123" });
     await Restaurant.create({
@@ -62,7 +64,7 @@ const seedDatabase = async () => {
       capacity: 150,
     });
 
-    await Category.insertMany([
+    const Categories = await Category.insertMany([
       {
         restaurantId: "restaurant_123",
         name: "Burgers",
@@ -205,7 +207,7 @@ const seedDatabase = async () => {
       },
     ]);
 
-    await CustomizationOption.insertMany([
+    const CustomizationOptions = await CustomizationOption.insertMany([
       {
         restaurantId: "restaurant_123",
         name: "Extra Cheese",
@@ -265,11 +267,26 @@ const seedDatabase = async () => {
       },
     ]);
 
-    const categories = await Category.find({}, "_id"); // Fetch inserted categories
-    const customizations = await CustomizationOption.find({}, "_id"); // Fetch inserted customizations
+    await OrderType.insertMany([
+      {
+        restaurantId: "restaurant_123",
+        orderType: "Dine_In",
+      },
+      {
+        restaurantId: "restaurant_123",
+        orderType: "Take_away",
+      },
+      {
+        restaurantId: "restaurant_123",
+        orderType: "Delivery",
+      },
+    ]);
+
+    // const Categories = await Category.find({}, "_id"); // Fetch inserted Categories
+    // const customizations = await CustomizationOption.find({}, "_id"); // Fetch inserted customizations
 
     const items = [];
-    categories.forEach((category) => {
+    Categories.forEach((category) => {
       for (let i = 1; i <= 3; i++) {
         items.push({
           restaurantId: "restaurant_123",
@@ -282,9 +299,9 @@ const seedDatabase = async () => {
           preparationTime: Math.floor(Math.random() * 10) + 10, // Random prep time 10-20 min
           allergens: ["Dairy", "Gluten"],
           customizationOptions: [
-            customizations[Math.floor(Math.random() * customizations.length)]
+            CustomizationOptions[Math.floor(Math.random() * CustomizationOptions.length)]
               ._id,
-            customizations[Math.floor(Math.random() * customizations.length)]
+            CustomizationOptions[Math.floor(Math.random() * CustomizationOptions.length)]
               ._id,
           ],
           popularityScore: Math.floor(Math.random() * 100), // Random popularity score
@@ -315,7 +332,7 @@ const seedDatabase = async () => {
             timeSlots: [{ openTime: "12:00 PM", closeTime: "3:00 PM" }],
           },
         ],
-        categories: categories.map((cat) => cat._id),
+        categories: Categories.map((cat) => cat._id),
         items: itemsV2.slice(0, 10).map((item) => ({
           item: item._id,
           defaultPrice: 10,
@@ -337,7 +354,7 @@ const seedDatabase = async () => {
             timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
           },
         ],
-        categories: categories.map((cat) => cat._id),
+        categories: Categories.map((cat) => cat._id),
         items: itemsV2.slice(10, 20).map((item) => ({
           item: item._id,
           defaultPrice: 15,
@@ -380,7 +397,7 @@ const seedDatabase = async () => {
             timeSlots: [{ openTime: "18:00", closeTime: "21:00" }],
           },
         ],
-        categories: categories.map((cat) => cat._id),
+        categories: Categories.map((cat) => cat._id),
         items: itemsV2.slice(10, 20).map((item) => ({
           item: item._id,
           defaultPrice: 15,
@@ -422,7 +439,7 @@ const seedDatabase = async () => {
             timeSlots: [{ openTime: "14:00", closeTime: "18:00" }],
           },
         ],
-        categories: categories.map((cat) => cat._id),
+        categories: Categories.map((cat) => cat._id),
         items: itemsV2.slice(10, 20).map((item) => ({
           item: item._id,
           defaultPrice: 15,
@@ -464,7 +481,7 @@ const seedDatabase = async () => {
             timeSlots: [{ openTime: "09:00", closeTime: "14:00" }],
           },
         ],
-        categories: categories.map((cat) => cat._id),
+        categories: Categories.map((cat) => cat._id),
         items: itemsV2.slice(10, 20).map((item) => ({
           item: item._id,
           defaultPrice: 15,
@@ -506,7 +523,7 @@ const seedDatabase = async () => {
             timeSlots: [{ openTime: "08:00", closeTime: "08:59" }],
           },
         ],
-        categories: categories.map((cat) => cat._id),
+        categories: Categories.map((cat) => cat._id),
         items: itemsV2.slice(10, 20).map((item) => ({
           item: item._id,
           // defaultPrice: 15,
