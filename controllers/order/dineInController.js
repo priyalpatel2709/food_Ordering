@@ -19,7 +19,7 @@ const { logger } = require("../../middleware/loggingMiddleware");
 // Helper to recalculate order totals
 const recalculateOrderTotals = async (order, restaurantDb) => {
   const Item = getItemModel(restaurantDb);
-  // Tax and Discount models are needed if we were fetching by ID, 
+  // Tax and Discount models are needed if we were fetching by ID,
   // but here we populate via Mongoose
   const Tax = getTaxModel(restaurantDb);
   const Discount = getDiscountModel(restaurantDb);
@@ -28,7 +28,7 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
   // We need the tax documents physically to get the percentage
   await order.populate({
     path: "orderItems.item",
-    populate: { path: "taxRate", model: Tax } 
+    populate: { path: "taxRate", model: Tax },
   });
 
   let subtotal = 0;
@@ -52,38 +52,44 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
       );
     }
     const lineItemTotal = (price + modifiersTotal) * quantity;
-    
+
     // Add to Subtotal
     subtotal += lineItemTotal;
 
     // Calculate Item-Level Tax
     // Check if item is taxable and has tax rates
-    if (orderItem.item.taxable && orderItem.item.taxRate && orderItem.item.taxRate.length > 0) {
-       for (const taxDoc of orderItem.item.taxRate) {
-           // Ensure taxDoc is populated and valid
-           if (taxDoc && typeof taxDoc.percentage === 'number') {
-               const taxAmount = (lineItemTotal * taxDoc.percentage) / 100;
-               
-               if (!accumulatedTaxes[taxDoc._id.toString()]) {
-                   accumulatedTaxes[taxDoc._id.toString()] = {
-                       taxId: taxDoc._id,
-                       percentage: taxDoc.percentage,
-                       taxCharge: 0
-                   };
-               }
-               accumulatedTaxes[taxDoc._id.toString()].taxCharge += taxAmount;
-           }
-       }
+    if (
+      orderItem.item.taxable &&
+      orderItem.item.taxRate &&
+      orderItem.item.taxRate.length > 0
+    ) {
+      for (const taxDoc of orderItem.item.taxRate) {
+        // Ensure taxDoc is populated and valid
+        if (taxDoc && typeof taxDoc.percentage === "number") {
+          const taxAmount = (lineItemTotal * taxDoc.percentage) / 100;
+
+          if (!accumulatedTaxes[taxDoc._id.toString()]) {
+            accumulatedTaxes[taxDoc._id.toString()] = {
+              taxId: taxDoc._id,
+              percentage: taxDoc.percentage,
+              taxCharge: 0,
+            };
+          }
+          accumulatedTaxes[taxDoc._id.toString()].taxCharge += taxAmount;
+        }
+      }
     }
   }
 
   // Construct Tax Breakdown Array
-  const taxBreakdown = Object.values(accumulatedTaxes).map(t => ({
-      taxId: t.taxId,
-      taxCharge: parseFloat(t.taxCharge.toFixed(2))
+  const taxBreakdown = Object.values(accumulatedTaxes).map((t) => ({
+    taxId: t.taxId,
+    taxCharge: parseFloat(t.taxCharge.toFixed(2)),
   }));
-  
-  const totalTaxAmount = parseFloat(taxBreakdown.reduce((sum, t) => sum + t.taxCharge, 0).toFixed(2));
+
+  const totalTaxAmount = parseFloat(
+    taxBreakdown.reduce((sum, t) => sum + t.taxCharge, 0).toFixed(2)
+  );
 
   // Discounts (Global Discounts Logic - applied to subtotal usually)
   let discountCharge = 0;
@@ -132,9 +138,9 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
 
   // Update Order
   order.subtotal = subtotal;
-  order.tax = { 
-      taxes: taxBreakdown, 
-      totalTaxAmount: totalTaxAmount 
+  order.tax = {
+    taxes: taxBreakdown,
+    totalTaxAmount: totalTaxAmount,
   };
   order.discount = {
     discounts: discountBreakdown,
@@ -197,9 +203,10 @@ const getTablesStatus = asyncHandler(async (req, res) => {
     const order = activeOrdersMap[tableNum];
 
     let status = "available";
+
+
     if (order) {
-      status =
-        order.orderStatus === ORDER_STATUS.PENDING ? "occupied" : "ongoing";
+      status = order?.orderItems === undefined ? "occupied" : "ongoing";
     }
 
     tables.push({
@@ -254,8 +261,8 @@ const createDineInOrder = asyncHandler(async (req, res) => {
   // If items are provided, process them. If not, create empty order (Occupied).
 
   const Item = getItemModel(req.restaurantDb);
-  const Tax = getTaxModel(req.restaurantDb);
-  const Discount = getDiscountModel(req.restaurantDb);
+  // const Tax = getTaxModel(req.restaurantDb);
+  // const Discount = getDiscountModel(req.restaurantDb);
 
   let orderItems = [];
   let subtotal = 0;
@@ -271,12 +278,12 @@ const createDineInOrder = asyncHandler(async (req, res) => {
       if (dbItem) {
         const price = Number(dbItem.price);
         const quantity = Number(i.quantity) || 1;
-        
+
         let safeModifiers = [];
         if (i.modifiers && Array.isArray(i.modifiers)) {
-          safeModifiers = i.modifiers.map(m => ({
+          safeModifiers = i.modifiers.map((m) => ({
             name: m.name ? String(m.name) : "Option",
-            price: Number(m.price) || 0
+            price: Number(m.price) || 0,
           }));
         }
 
@@ -300,7 +307,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
 
   const newOrder = new Order({
     restaurantId: `restaurant_${req.restaurantId}`,
-    customerId: req.user._id, // Waiter ID or Customer ID? Requirement says "A waiter can create...". So req.user is Waiter.
+    customerId: req.user._id,
     tableNumber: tableNumber.toString(),
     serverName: req.user.name,
     orderItems,
@@ -356,12 +363,12 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
 
     const price = Number(dbItem.price);
     const quantity = Number(i.quantity) || 1;
-    
+
     let safeModifiers = [];
     if (i.modifiers && Array.isArray(i.modifiers)) {
-      safeModifiers = i.modifiers.map(m => ({
+      safeModifiers = i.modifiers.map((m) => ({
         name: m.name ? String(m.name) : "Option",
-        price: Number(m.price) || 0
+        price: Number(m.price) || 0,
       }));
     }
 
@@ -458,9 +465,92 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
   });
 });
 
+// 5. Remove Dine-In Order (If New/Pending)
+const removeDineInOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  const Order = getOrderModel(req.restaurantDb);
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
+      status: "error",
+      message: "Order not found",
+    });
+  }
+
+  // Only allow removing if status is PENDING (new)
+  if (order.orderStatus !== ORDER_STATUS.PENDING) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      status: "error",
+      message: `Cannot remove order in ${order.orderStatus} status. Only PENDING orders can be removed.`,
+    });
+  }
+
+  // Find and delete the order
+  await Order.findByIdAndDelete(orderId);
+
+  res.status(HTTP_STATUS.OK).json({
+    status: "success",
+    message: "Dine-in order removed successfully",
+  });
+});
+
+// 6. Remove Item from Order (If item is in 'new' status)
+const removeOrderItem = asyncHandler(async (req, res) => {
+  const { orderId, itemId } = req.params; // itemId is the _id of the item in orderItems array
+  const Order = getOrderModel(req.restaurantDb);
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
+      status: "error",
+      message: "Order not found",
+    });
+  }
+
+  // Find the item in orderItems
+  // Support both the order item's unique _id and the product's _id for flexibility
+  const itemIndex = order.orderItems.findIndex(
+    (i) => i._id.toString() === itemId || (i.item && i.item.toString() === itemId)
+  );
+
+  if (itemIndex === -1) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
+      status: "error",
+      message: `Item with ID ${itemId} not found in order ${orderId}`,
+    });
+  }
+
+  const item = order.orderItems[itemIndex];
+
+  // Only allow removing if item is in "new" state
+  // Or if the whole order is PENDING
+  if (item.itemStatus !== "new" && order.orderStatus !== ORDER_STATUS.PENDING) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      status: "error",
+      message: `Cannot remove item as it is already ${item.itemStatus} and order is ${order.orderStatus}`,
+    });
+  }
+
+  // Remove the item
+  order.orderItems.splice(itemIndex, 1);
+
+  // Recalculate totals
+  await recalculateOrderTotals(order, req.restaurantDb);
+  await order.save();
+
+  res.status(HTTP_STATUS.OK).json({
+    status: "success",
+    message: "Item removed from order",
+    data: order,
+  });
+});
+
 module.exports = {
   getTablesStatus,
   createDineInOrder,
   addItemsToOrder,
   completeDineInCheckout,
+  removeDineInOrder,
+  removeOrderItem,
 };

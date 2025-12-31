@@ -29,14 +29,29 @@ const {
   getTablesStatus,
   createDineInOrder,
   addItemsToOrder,
-  completeDineInCheckout
+  completeDineInCheckout,
+  removeDineInOrder,
+  removeOrderItem,
 } = require("../../controllers/order/dineInController");
 
 // Dine-In Routes
 router.get("/tables", identifyTenant, protect, getTablesStatus);
 router.post("/dine-in", identifyTenant, protect, createDineInOrder);
 router.put("/dine-in/:orderId/items", identifyTenant, protect, addItemsToOrder);
-router.post("/dine-in/:orderId/pay", identifyTenant, protect, completeDineInCheckout);
+router.post(
+  "/dine-in/:orderId/pay",
+  identifyTenant,
+  protect,
+  completeDineInCheckout
+);
+
+router.delete(
+  "/dine-in/:orderId/item/:itemId",
+  identifyTenant,
+  protect,
+  removeOrderItem
+);
+router.delete("/dine-in/:orderId", identifyTenant, protect, removeDineInOrder);
 
 router.get("/my-orders", identifyTenant, protect, getUserOrders);
 
