@@ -14,9 +14,11 @@ const {
   updateById,
   currentMenu,
   updateMenu,
+  addItemToMenu,
 } = require("../../controllers/menu/menuController");
 
 router.post("/createMenu", identifyTenant, protect, createMenu);
+router.post("/:id/add-item", identifyTenant, protect, addItemToMenu);
 router.get("/current", identifyTenant, currentMenu);
 router.get("/:id", identifyTenant, protect, queryHandler, getMenuById);
 router.delete("/:id", identifyTenant, protect, deleteById);

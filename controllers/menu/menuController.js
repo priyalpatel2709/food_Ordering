@@ -353,6 +353,42 @@ const updateMenu = async (req, res, next) => {
   }
 };
 
+/**
+ * Add a new item to an existing menu
+ * POST /api/v1/menu/:id/add-item
+ */
+const addItemToMenu = asyncHandler(async (req, res, next) => {
+  const { item, ...pricingDetails } = req.body;
+  const Menu = getMenuModel(req.restaurantDb);
+
+  if (!item) {
+    return next(createError(400, "Item ID is required"));
+  }
+
+  const updatedMenu = await Menu.findByIdAndUpdate(
+    req.params.id,
+    {
+      $push: {
+        items: {
+          item,
+          ...pricingDetails
+        }
+      }
+    },
+    { new: true, runValidators: true }
+  );
+
+  if (!updatedMenu) {
+    return next(createError(404, "Menu not found"));
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Item added to menu successfully",
+    data: updatedMenu
+  });
+});
+
 module.exports = {
   createMenu,
   getMenuById,
@@ -361,4 +397,5 @@ module.exports = {
   updateById,
   currentMenu,
   updateMenu,
+  addItemToMenu,
 };
