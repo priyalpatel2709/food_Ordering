@@ -21,6 +21,7 @@ const { securityMiddleware } = require("./middleware/securityMiddleware");
 const { logger, requestLogger, errorLogger } = require("./middleware/loggingMiddleware");
 const { closeAllConnections, getConnectionCount } = require("./config/db");
 const { DEFAULTS } = require("./utils/const");
+const { initSocket, closeAllStreams } = require("./services/realtimeService");
 
 const {
   userRouters,
@@ -104,6 +105,9 @@ const server = app.listen(PORT, () => {
   console.log(`📝 Environment: ${process.env.NODE_ENV}`.cyan);
 });
 
+// Initialize Realtime Service (Socket.io + Change Streams)
+initSocket(server);
+
 // Graceful shutdown handler
 const gracefulShutdown = async (signal) => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
@@ -117,7 +121,9 @@ const gracefulShutdown = async (signal) => {
     try {
       // Close all database connections
       await closeAllConnections();
-      console.log('✅ All database connections closed'.green);
+      // Close all active change streams
+      closeAllStreams();
+      console.log('✅ All database connections and streams closed'.green);
       logger.info('Graceful shutdown completed successfully');
       process.exit(0);
     } catch (error) {
@@ -148,10 +154,11 @@ process.on("unhandledRejection", (err) => {
   });
   console.error("❌ UNHANDLED REJECTION! 💥 Shutting down...".red);
   console.error(err);
-  
+
   server.close(async () => {
     try {
       await closeAllConnections();
+      closeAllStreams();
       process.exit(1);
     } catch (error) {
       logger.error('Error closing connections during unhandled rejection:', error);
