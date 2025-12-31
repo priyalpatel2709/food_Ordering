@@ -310,6 +310,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
     customerId: req.user._id,
     tableNumber: tableNumber.toString(),
     serverName: req.user.name,
+    source: 'staff',
     orderItems,
     subtotal,
     orderFinalCharge: subtotal, // Basic calc, assuming no tax/discount yet
@@ -553,4 +554,5 @@ module.exports = {
   completeDineInCheckout,
   removeDineInOrder,
   removeOrderItem,
+  recalculateOrderTotals,
 };

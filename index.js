@@ -37,6 +37,8 @@ const {
   paymentRoutes,
   menuRouteV2,
   kdsRoutes,
+  // customerDineInRoutes,
+  dashboardRouters,
 } = require("./routes");
 
 const app = express();
@@ -87,8 +89,9 @@ app.use("/api/v1/item", itemRoute);
 app.use("/api/v1/menu", menuRoute);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/orderType", orderTypeRoutes);
-app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1/kds", kdsRoutes);
+// app.use("/api/v1/customer/dine-in", customerDineInRoutes);
+app.use("/api/v1/restaurant/dashboard", dashboardRouters);
 
 // API routes - V2
 app.use("/api/v2/menu", menuRouteV2);

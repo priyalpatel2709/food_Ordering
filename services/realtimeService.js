@@ -20,13 +20,23 @@ const initSocket = (server) => {
     io.on("connection", (socket) => {
         logger.info(`New client connected: ${socket.id}`);
 
-        // Join a restaurant-specific room
+        // Join a restaurant-specific room (for KDS updates)
         socket.on("join_restaurant", async (restaurantId) => {
             socket.join(restaurantId);
-            logger.info(`Socket ${socket.id} joined room: ${restaurantId}`);
+            logger.info(`Socket ${socket.id} joined restaurant room: ${restaurantId}`);
 
             // Start watching database for this restaurant if not already watching
             await setupChangeStream(restaurantId);
+        });
+
+        // Join a group ordering room for a specific table
+        socket.on("join_group", (data) => {
+            const { restaurantId, tableNumber } = data;
+            if (!restaurantId || !tableNumber) return;
+
+            const room = `group:${restaurantId}:${tableNumber}`;
+            socket.join(room);
+            logger.info(`Socket ${socket.id} joined group room: ${room}`);
         });
 
         socket.on("disconnect", () => {
@@ -35,6 +45,16 @@ const initSocket = (server) => {
     });
 
     return io;
+};
+
+/**
+ * Emit cart update to a specific group room
+ */
+const emitGroupCartUpdate = (restaurantId, tableNumber, cartData) => {
+    if (!io) return;
+    const room = `group:${restaurantId}:${tableNumber}`;
+    io.to(room).emit("group_cart_updated", cartData);
+    logger.info(`Broadcasted group cart update to room: ${room}`);
 };
 
 /**
@@ -103,5 +123,6 @@ const closeAllStreams = () => {
 
 module.exports = {
     initSocket,
-    closeAllStreams
+    closeAllStreams,
+    emitGroupCartUpdate
 };

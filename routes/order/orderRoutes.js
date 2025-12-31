@@ -34,6 +34,19 @@ const {
   removeOrderItem,
 } = require("../../controllers/order/dineInController");
 
+const {
+  joinGroupSession,
+  addItemToGroupCart,
+  updateGroupCartItem,
+  submitGroupOrder,
+} = require("../../controllers/order/groupOrderController");
+
+// Group Ordering Routes
+router.get("/dine-in/group/join", identifyTenant, protect, joinGroupSession);
+router.post("/dine-in/group/:orderId/add", identifyTenant, protect, addItemToGroupCart);
+router.patch("/dine-in/group/:orderId/item/:itemId", identifyTenant, protect, updateGroupCartItem);
+router.post("/dine-in/group/:orderId/submit", identifyTenant, protect, submitGroupOrder);
+
 // Dine-In Routes
 router.get("/tables", identifyTenant, protect, getTablesStatus);
 router.post("/dine-in", identifyTenant, protect, createDineInOrder);

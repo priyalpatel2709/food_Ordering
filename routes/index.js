@@ -4,6 +4,7 @@ const {
   restaurantRouters,
   discountRouters,
   taxRouters,
+  dashboardRouters,
 } = require("./restaurant/index");
 
 const {
@@ -35,4 +36,5 @@ module.exports = {
   paymentRoutes,
   menuRouteV2,
   kdsRoutes,
+  dashboardRouters,
 };

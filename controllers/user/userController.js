@@ -29,6 +29,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const newUser = await User.create({
       email,
       restaurantId,
+      roleName: "customer",
       ...user,
     });
 
@@ -39,6 +40,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       email: newUser.email,
       token: generateToken(newUser._id, restaurantId),
       restaurantId: newUser.restaurantId,
+      role: newUser.roleName,
     });
   } catch (error) {
     // Handle validation errors
@@ -69,6 +71,7 @@ const authUser = asyncHandler(async (req, res) => {
     email: user.email,
     token: generateToken(user._id, user.restaurantId),
     restaurantId: user.restaurantId,
+    role: user.roleName,
   });
 });
 

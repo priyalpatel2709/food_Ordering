@@ -14,6 +14,7 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    source: { type: String, enum: ['staff', 'customer'], default: 'staff' },
     orderId: { type: String, unique: true },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -133,6 +134,8 @@ const orderSchema = new mongoose.Schema(
           },
         ],
         itemStatus: { type: String, default: "new" },
+        addedBy: { type: String }, // To track who added it in group ordering
+        addedByImage: { type: String }, // To show avatar in group ordering
       },
     ],
     kdsStatus: { type: String, default: "new" },
