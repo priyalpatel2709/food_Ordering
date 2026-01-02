@@ -11,10 +11,10 @@ const {
   updateById,
 } = require("../../controllers/menu/categoryController");
 
-router.post("/createCategory", identifyTenant, protect, createCategory);
+router.post("/", identifyTenant, protect, createCategory);
 router.get("/", identifyTenant, protect, getAllCategories);
 router.get("/:id", identifyTenant, protect, getCategoryById);
 router.delete("/:id", identifyTenant, protect, deleteById);
-router.put("/:id", identifyTenant, protect, updateById);
+router.patch("/:id", identifyTenant, protect, updateById);
 
 module.exports = router;

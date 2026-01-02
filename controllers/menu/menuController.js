@@ -371,9 +371,9 @@ const addItemToMenu = asyncHandler(async (req, res, next) => {
       $push: {
         items: {
           item,
-          ...pricingDetails
-        }
-      }
+          ...pricingDetails,
+        },
+      },
     },
     { new: true, runValidators: true }
   );
@@ -385,7 +385,7 @@ const addItemToMenu = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Item added to menu successfully",
-    data: updatedMenu
+    data: updatedMenu,
   });
 });
 
