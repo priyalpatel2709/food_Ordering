@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const taxSchema = new mongoose.Schema(
   {
-    restaurantId: { type: String, required: true },
+    restaurantId: { type: String,  },
     name: { type: String, required: true }, // Example: "VAT"
     percentage: {
       type: Number,

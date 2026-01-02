@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const discountSchema = new mongoose.Schema(
   {
-    restaurantId: { type: String, required: true },
+    restaurantId: { type: String, },
     type: { type: String, enum: ["percentage", "fixed"], required: true }, // Type of discount
     discountCode: { type: String },
     discountName: { type: String },

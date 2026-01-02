@@ -4,7 +4,6 @@ const menuSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: String,
-      required: true,
     },
     name: { type: String, required: true },
     description: { type: String },

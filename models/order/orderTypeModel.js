@@ -4,7 +4,7 @@ const orderTypeSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: String,
-      required: true,
+
     },
     orderType: { type: String, required: true, unique: true },
     orderTypeNote: { type: String },

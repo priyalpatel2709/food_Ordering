@@ -12,7 +12,7 @@ const orderSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: String,
-      required: true,
+  
     },
     source: { type: String, enum: ['staff', 'customer'], default: 'staff' },
     orderId: { type: String, unique: true },

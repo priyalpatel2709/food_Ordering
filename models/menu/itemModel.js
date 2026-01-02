@@ -4,7 +4,6 @@ const itemSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: String,
-      required: true,
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,

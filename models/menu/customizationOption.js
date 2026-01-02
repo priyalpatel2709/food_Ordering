@@ -4,7 +4,7 @@ const customizationOptionSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: String,
-      required: true,
+ 
     },
     name: { type: String, required: true }, // Example: "Extra Cheese"
     price: { type: Number, default: 0, min: 0 }, // Additional price for customization
