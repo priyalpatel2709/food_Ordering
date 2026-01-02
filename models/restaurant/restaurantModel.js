@@ -43,7 +43,13 @@ const restaurantModel = new mongoose.Schema(
       totalTables: { type: Number, default: 0 },
     },
     kdsConfiguration: {
-      workflow: [{ type: String }], // e.g., ["new", "start", "prepared", "ready"]
+      workflow: [{ type: String }],
+      stations: [
+        {
+          name: { type: String, required: true },
+          categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
+        },
+      ],
     },
   },
   { timestamps: true }

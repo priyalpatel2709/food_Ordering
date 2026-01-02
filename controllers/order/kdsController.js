@@ -14,13 +14,6 @@ const getKDSOrders = asyncHandler(async (req, res) => {
   const Item = getItemModel(req.restaurantDb);
 
   try {
-    const query = {
-      restaurantId: `restaurant_${req.restaurantId}`, // Uncomment if using shared DB
-      orderStatus: {
-        $nin: [ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELED, ORDER_STATUS.DELIVERED]
-      }
-    };
-
     const orders = await Order.find({})
       .sort({ createdAt: 1 }) // FIFO
       .populate({
@@ -94,11 +87,10 @@ const updateOrderItemStatus = asyncHandler(async (req, res) => {
   let workflow = defaultWorkflow;
 
   // Try to fetch restaurant config
-  // This part depends on how the DB architecture handles multi-tenancy for Restaurant settings.
-  // If 'Restaurant' collection is in the tenant DB, we are good.
   const restaurantConfig = await Restaurant.findOne({
-    restaurantId: req.restaurantId,
+    restaurantId: req.restaurantId || `restaurant_${req.user.restaurantId}`, // Fallback if req.restaurantId not set
   });
+
   if (
     restaurantConfig &&
     restaurantConfig.kdsConfiguration &&
@@ -117,21 +109,35 @@ const updateOrderItemStatus = asyncHandler(async (req, res) => {
 
   // Find item and update
   const itemIndex = order.orderItems.findIndex(
-    (i) => i._id && i._id.toString() === itemId
+    (i) => (i._id && i._id.toString() === itemId) || i.id === itemId
   );
-  // Note: orderItems might not have _id if subdocument _id creation is disabled,
-  // but Mongoose usually adds them by default.
-  // If passed itemId corresponds to the 'item' reference ID, that's ambiguous if multiple same items.
-  // Assuming itemId is the subdocument ID.
 
   if (itemIndex === -1) {
-    // Fallback: try matching by item reference ID if provided (less safe)
     return res
       .status(404)
       .json({ status: "error", message: "Item not found in order" });
   }
 
+  // Update Status
   order.orderItems[itemIndex].itemStatus = status;
+
+  // Update Timestamps based on status
+  // Mapping standard workflow names to timestamp fields
+  // Workflow: ["new", "start", "prepared", "ready"]
+  const now = new Date();
+  if (status === "start" || status === "preparing") {
+    if (!order.orderItems[itemIndex].kdsTimestamps)
+      order.orderItems[itemIndex].kdsTimestamps = {};
+    order.orderItems[itemIndex].kdsTimestamps.startedAt = now;
+  } else if (status === "prepared") {
+    if (!order.orderItems[itemIndex].kdsTimestamps)
+      order.orderItems[itemIndex].kdsTimestamps = {};
+    order.orderItems[itemIndex].kdsTimestamps.preparedAt = now;
+  } else if (status === "ready" || status === "served") {
+    if (!order.orderItems[itemIndex].kdsTimestamps)
+      order.orderItems[itemIndex].kdsTimestamps = {};
+    order.orderItems[itemIndex].kdsTimestamps.readyAt = now;
+  }
 
   // Recalculate Order KDS Status
   const statusIndices = order.orderItems.map((item) => {
@@ -140,27 +146,38 @@ const updateOrderItemStatus = asyncHandler(async (req, res) => {
     return workflow.indexOf(s);
   });
 
+  // Calculate generic KDS Status for the whole order
   const minIndex = Math.min(...statusIndices);
-  const maxIndex = Math.max(...statusIndices);
+  // If minIndex corresponds to "ready" (usually last), then all are ready.
+  // If minIndex corresponds to "new" (0), but maxIndex > 0, then it's "ongoing"/"partial".
 
   let newKdsStatus = workflow[minIndex];
+  const maxIndex = Math.max(...statusIndices);
 
   // Logic: passing 'new' (0) to 'start' (1) if WORK HAS STARTED (max > 0)
   if (minIndex === 0 && maxIndex > 0 && workflow.length > 1) {
+    // Some are started/done, some are new -> Order is "in progress" (use 2nd status usually)
     newKdsStatus = workflow[1];
   }
 
   order.kdsStatus = newKdsStatus;
 
-  // Optional: Sync with main orderStatus if needed
-  // e.g. if kdsStatus == 'ready' -> orderStatus = 'READY'
-  // But user didn't explicitly ask for this sync, so I'll leave it decoupled or simple.
-  // If KDS says "ready", it usually means "Food Ready".
-  // Main status "READY" usually means "Ready for Pickup/Serve".
-  // I'll make a mapping if "ready" is the status.
-  if (newKdsStatus === "ready" || newKdsStatus === "prepared") {
-    // Maybe update main status?
-    // For now, let's just save.
+  // Sync with main Order Status if ALL items are READY
+  const isAllReady = statusIndices.every(
+    (idx) => idx === workflow.indexOf("ready") || workflow[idx] === "served"
+  );
+  if (
+    isAllReady &&
+    order.orderStatus !== ORDER_STATUS.READY &&
+    order.orderStatus !== ORDER_STATUS.SERVED
+  ) {
+    // Create notification/log if needed
+    order.orderStatus = ORDER_STATUS.READY;
+    order.statusHistory.push({
+      status: ORDER_STATUS.READY,
+      timestamp: new Date(),
+      updatedBy: "KDS System",
+    });
   }
 
   await order.save();
@@ -177,7 +194,7 @@ const updateOrderItemStatus = asyncHandler(async (req, res) => {
 const getKDSConfig = asyncHandler(async (req, res) => {
   const Restaurant = getRestaurantModel(req.restaurantDb);
   const restaurant = await Restaurant.findOne({
-    restaurantId: req.restaurantId,
+    restaurantId: `restaurant_${req.restaurantId}`,
   });
 
   const workflow = restaurant?.kdsConfiguration?.workflow || [
@@ -187,10 +204,13 @@ const getKDSConfig = asyncHandler(async (req, res) => {
     "ready",
   ];
 
+  const stations = restaurant?.kdsConfiguration?.stations || [];
+
   res.status(200).json({
     status: "success",
     data: {
       workflow,
+      stations,
     },
   });
 });

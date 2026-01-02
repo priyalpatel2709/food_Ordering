@@ -12,7 +12,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     const restaurantId = `restaurant_${req.restaurantId}`;
     const Order = getOrderModel(req.restaurantDb);
 
-    // Date Filtering logic
+    // Date Filtering
     const dateFilter = {};
     if (startDate || endDate) {
         dateFilter.createdAt = {};
@@ -24,143 +24,236 @@ const getDashboardStats = asyncHandler(async (req, res) => {
         }
     }
 
-    // 1. Overall Summary Aggregation
-    const summaryStats = await Order.aggregate([
+    const matchStage = {
+        restaurantId,
+        orderStatus: { $ne: ORDER_STATUS.CANCELED }, // Exclude canceled from revenue stats (unless handled separately)
+        ...dateFilter
+    };
+
+    // Run Main Aggregation (Success Stats)
+    const reportPromise = Order.aggregate([
+        { $match: matchStage },
+        {
+            $facet: {
+                // 1. Financial KPI Summary
+                "kpis": [
+                    {
+                        $group: {
+                            _id: null,
+                            grossSales: { $sum: "$orderFinalCharge" },
+                            netSales: { $sum: "$subtotal" },
+                            totalTax: { $sum: "$tax.totalTaxAmount" },
+                            totalTips: { $sum: { $add: ["$restaurantTipCharge", "$deliveryTipCharge"] } },
+                            totalDiscounts: { $sum: "$discount.totalDiscountAmount" },
+                            totalRefunds: { $sum: "$refunds.remainingCharge" }, // Assuming this tracks refunded amount
+                            orderCount: { $sum: 1 },
+                            avgOrderValue: { $avg: "$orderFinalCharge" },
+                            avgTip: { $avg: { $add: ["$restaurantTipCharge", "$deliveryTipCharge"] } }
+                        }
+                    }
+                ],
+
+                // 2. Sales Trend (Graph Data) - Group by Day
+                "salesTrend": [
+                    {
+                        $group: {
+                            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                            sales: { $sum: "$orderFinalCharge" },
+                            orders: { $sum: 1 }
+                        }
+                    },
+                    { $sort: { _id: 1 } } // Sort by date ascending
+                ],
+
+                // 3. Payment Method Breakdown
+                "paymentAnalysis": [
+                    { $unwind: "$payment.history" },
+                    {
+                        $group: {
+                            _id: "$payment.history.method",
+                            volume: { $sum: "$payment.history.amount" },
+                            count: { $sum: 1 }
+                        }
+                    }
+                ],
+
+                // 4. Order Type / Source Analysis
+                "orderDistribution": [
+                    {
+                        $group: {
+                            _id: {
+                                source: "$source", // staff vs customer
+                                type: "$isDeliveryOrder", // boolean
+                                table: { $cond: [{ $ifNull: ["$tableNumber", false] }, "Dine-In", "Takeout"] }
+                            },
+                            count: { $sum: 1 },
+                            revenue: { $sum: "$orderFinalCharge" }
+                        }
+                    }
+                ],
+
+                // 5. Product Performance (Top Items)
+                "topItems": [
+                    { $unwind: "$orderItems" },
+                    {
+                        $group: {
+                            _id: "$orderItems.item",
+                            quantitySold: { $sum: "$orderItems.quantity" },
+                            revenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.quantity"] } }
+                        }
+                    },
+                    { $sort: { quantitySold: -1 } },
+                    { $limit: 10 },
+                    // Lookup item details
+                    {
+                        $lookup: {
+                            from: "items",
+                            localField: "_id",
+                            foreignField: "_id",
+                            as: "details"
+                        }
+                    },
+                    { $unwind: "$details" },
+                    {
+                        $project: {
+                            name: "$details.name",
+                            quantitySold: 1,
+                            revenue: 1
+                        }
+                    }
+                ],
+
+                // 6. Operational Efficiency
+                "operations": [
+                    {
+                        $match: { orderStatus: ORDER_STATUS.COMPLETED }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            avgPrepTimeMinutes: {
+                                $avg: {
+                                    $divide: [
+                                        { $subtract: ["$preparationEndTime", "$preparationStartTime"] },
+                                        1000 * 60 // Convert ms to minutes
+                                    ]
+                                }
+                            },
+                        }
+                    }
+                ],
+
+                // 7. Hourly Peak Analysis
+                "hourlyTraffic": [
+                    {
+                        $project: { hour: { $hour: "$createdAt" } }
+                    },
+                    {
+                        $group: { _id: "$hour", count: { $sum: 1 } }
+                    },
+                    { $sort: { _id: 1 } }
+                ],
+
+                // 8. Staff Performance (New)
+                "staffPerformance": [
+                    { $match: { serverName: { $exists: true, $ne: null } } },
+                    {
+                        $group: {
+                            _id: "$serverName",
+                            ordersHandled: { $sum: 1 },
+                            totalSales: { $sum: "$orderFinalCharge" },
+                            avgTip: { $avg: "$restaurantTipCharge" }
+                        }
+                    },
+                    { $sort: { totalSales: -1 } }
+                ],
+
+                // 9. Top Customers (New)
+                "topCustomers": [
+                    { $match: { customerId: { $ne: null } } },
+                    {
+                        $group: {
+                            _id: "$customerId",
+                            totalSpent: { $sum: "$orderFinalCharge" },
+                            visitCount: { $sum: 1 },
+                            lastVisit: { $max: "$createdAt" }
+                        }
+                    },
+                    { $sort: { totalSpent: -1 } },
+                    { $limit: 5 },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "_id",
+                            foreignField: "_id",
+                            as: "user"
+                        }
+                    },
+                    { $unwind: "$user" },
+                    {
+                        $project: {
+                            name: "$user.name",
+                            email: "$user.email",
+                            totalSpent: 1,
+                            visitCount: 1,
+                            lastVisit: 1
+                        }
+                    }
+                ]
+            }
+        }
+    ]);
+
+    // 2. Parallel Aggregation for CANCELED orders (Lost Revenue)
+    // We do this separately because the main pipeline excludes CANCELED orders to sanitize revenue figures
+    const lostRevenuePromise = Order.aggregate([
         {
             $match: {
                 restaurantId,
-                orderStatus: ORDER_STATUS.COMPLETED,
+                orderStatus: ORDER_STATUS.CANCELED,
                 ...dateFilter
             }
         },
         {
             $group: {
                 _id: null,
-                totalSales: { $sum: "$orderFinalCharge" },
-                totalTax: { $sum: "$tax.totalTaxAmount" },
-                totalDiscount: { $sum: "$discount.totalDiscountAmount" },
-                totalNetSales: { $sum: "$subtotal" }, // Sales before tax/tips
-                totalOrders: { $sum: 1 },
-                avgOrderValue: { $avg: "$orderFinalCharge" }
-            }
-        }
-    ]);
-
-    const summary = summaryStats[0] || {
-        totalSales: 0,
-        totalTax: 0,
-        totalDiscount: 0,
-        totalNetSales: 0,
-        totalOrders: 0,
-        avgOrderValue: 0
-    };
-
-    // 2. Order Status Breakdown
-    const statusBreakdown = await Order.aggregate([
-        {
-            $match: {
-                restaurantId,
-                ...dateFilter
-            }
-        },
-        {
-            $group: {
-                _id: "$orderStatus",
-                count: { $sum: 1 },
-                amount: { $sum: "$orderFinalCharge" }
-            }
-        }
-    ]);
-
-    // 3. Top Selling Items
-    const topItems = await Order.aggregate([
-        {
-            $match: {
-                restaurantId,
-                orderStatus: ORDER_STATUS.COMPLETED,
-                ...dateFilter
-            }
-        },
-        { $unwind: "$orderItems" },
-        {
-            $group: {
-                _id: "$orderItems.item",
-                quantitySold: { $sum: "$orderItems.quantity" },
-                revenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.quantity"] } }
-            }
-        },
-        { $sort: { quantitySold: -1 } },
-        { $limit: 10 },
-        {
-            $lookup: {
-                from: "items", // This might need adjustment if using multiple DBs, but Mongoose aggregate uses collection name
-                localField: "_id",
-                foreignField: "_id",
-                as: "itemDetails"
-            }
-        },
-        { $unwind: "$itemDetails" },
-        {
-            $project: {
-                name: "$itemDetails.name",
-                quantitySold: 1,
-                revenue: 1
-            }
-        }
-    ]);
-
-    // 4. Sales by Source (Staff vs Customer)
-    const sourceBreakdown = await Order.aggregate([
-        {
-            $match: {
-                restaurantId,
-                orderStatus: ORDER_STATUS.COMPLETED,
-                ...dateFilter
-            }
-        },
-        {
-            $group: {
-                _id: { $ifNull: ["$source", "staff"] },
-                count: { $sum: 1 },
-                revenue: { $sum: "$orderFinalCharge" }
-            }
-        }
-    ]);
-
-    // 5. Peak Hours Analysis (Orders by Hour of Day)
-    const peakHours = await Order.aggregate([
-        {
-            $match: {
-                restaurantId,
-                orderStatus: ORDER_STATUS.COMPLETED,
-                ...dateFilter
-            }
-        },
-        {
-            $project: {
-                hour: { $hour: "$createdAt" }
-            }
-        },
-        {
-            $group: {
-                _id: "$hour",
+                lostRevenue: { $sum: "$orderFinalCharge" }, // Potential revenue lost
                 count: { $sum: 1 }
             }
-        },
-        { $sort: { _id: 1 } }
+        }
     ]);
 
+    // Execute in parallel
+    const [reportData, lostRevenueData] = await Promise.all([reportPromise, lostRevenuePromise]);
+    const result = reportData[0];
+    const lostStats = lostRevenueData[0] || { lostRevenue: 0, count: 0 };
+
+    // Format Response
     res.status(HTTP_STATUS.OK).json({
         status: "success",
         data: {
-            summary,
-            statusBreakdown,
-            topItems,
-            sourceBreakdown,
-            peakHours,
-            period: {
-                startDate: startDate || 'Beginning of time',
-                endDate: endDate || 'Last record'
+            summary: {
+                ...(result.kpis[0] || { grossSales: 0, orderCount: 0 }),
+                lostRevenue: lostStats.lostRevenue,
+                canceledOrders: lostStats.count
+            },
+            salesChart: result.salesTrend,
+            topItems: result.topItems,
+            paymentStats: result.paymentAnalysis,
+            staffPerformance: result.staffPerformance,
+            topCustomers: result.topCustomers,
+            distribution: result.orderDistribution.map(d => ({
+                source: d._id.source,
+                isDelivery: d._id.type,
+                type: d._id.table,
+                count: d.count,
+                revenue: d.revenue
+            })),
+            operations: result.operations[0] || { avgPrepTimeMinutes: 0 },
+            peakHours: result.hourlyTraffic,
+            metadata: {
+                period: { startDate, endDate },
+                generatedAt: new Date()
             }
         }
     });

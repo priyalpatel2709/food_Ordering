@@ -296,6 +296,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
           price,
           specialInstructions: i.specialInstructions,
           modifiers: safeModifiers,
+          itemStatus: "new",
         });
       }
     }
@@ -379,6 +380,12 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
       price,
       modifiers: safeModifiers,
       specialInstructions: i.specialInstructions,
+      itemStatus: "new",
+      kdsTimestamps: {
+        startedAt: null,
+        preparedAt: null,
+        readyAt: null
+      }
     });
   }
 
@@ -388,6 +395,15 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
   // Update status to CONFIRMED or ONGOING if it was PENDING?
   if (order.orderStatus === ORDER_STATUS.PENDING) {
     order.orderStatus = ORDER_STATUS.CONFIRMED; // Now it has items and is "live"
+  }
+
+  // Reset KDS Status because new items are added
+  // If we have mixed items, the KDS logic (min status) implies "new" or "started"
+  // We set it to 'new' or 'start' generally if there's work to do.
+  // The safest is to let the first update fix it, or force it to 'new' since we added 'new' items.
+  order.kdsStatus = "new";
+  if (order.orderStatus === ORDER_STATUS.READY) {
+    order.orderStatus = ORDER_STATUS.CONFIRMED; // Revert to confirmed if it was ready
   }
 
   const saved = await order.save();

@@ -12,7 +12,6 @@ const orderSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: String,
-  
     },
     source: { type: String, enum: ['staff', 'customer'], default: 'staff' },
     orderId: { type: String, unique: true },
@@ -136,6 +135,11 @@ const orderSchema = new mongoose.Schema(
         itemStatus: { type: String, default: "new" },
         addedBy: { type: String }, // To track who added it in group ordering
         addedByImage: { type: String }, // To show avatar in group ordering
+        kdsTimestamps: {
+          startedAt: { type: Date },
+          preparedAt: { type: Date },
+          readyAt: { type: Date },
+        },
       },
     ],
     kdsStatus: { type: String, default: "new" },

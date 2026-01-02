@@ -11,10 +11,10 @@ const {
   updateById,
 } = require("../../controllers/restaurant/restaurantController");
 
-router.post("/createRestaurant", identifyTenant, protect, createRestaurant);
-router.get("/allRestaurant", identifyTenant, protect, getAllRestaurants);
+router.post("/", identifyTenant, protect, createRestaurant);
+router.get("/", identifyTenant, protect, getAllRestaurants);
 router.get("/:id", identifyTenant, protect, getRestaurantById);
 router.delete("/:id", identifyTenant, protect, deleteById);
-router.put("/:id", identifyTenant, protect, updateById);
+router.patch("/:id", identifyTenant, protect, updateById);
 
 module.exports = router;
