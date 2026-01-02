@@ -7,18 +7,26 @@ const cookieParser = require("cookie-parser");
 dotenv.config();
 
 // Validate required environment variables
-const requiredEnvVars = ['JWT_SECRET', 'MONGO_URI', 'NODE_ENV'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+const requiredEnvVars = ["JWT_SECRET", "MONGO_URI", "NODE_ENV"];
+const missingEnvVars = requiredEnvVars.filter(
+  (varName) => !process.env[varName]
+);
 
 if (missingEnvVars.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
-  console.error('Please create a .env file with the required variables');
+  console.error(
+    `❌ Missing required environment variables: ${missingEnvVars.join(", ")}`
+  );
+  console.error("Please create a .env file with the required variables");
   process.exit(1);
 }
 
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { securityMiddleware } = require("./middleware/securityMiddleware");
-const { logger, requestLogger, errorLogger } = require("./middleware/loggingMiddleware");
+const {
+  logger,
+  requestLogger,
+  errorLogger,
+} = require("./middleware/loggingMiddleware");
 const { closeAllConnections, getConnectionCount } = require("./config/db");
 const { DEFAULTS } = require("./utils/const");
 const { initSocket, closeAllStreams } = require("./services/realtimeService");
@@ -70,12 +78,20 @@ app.get("/health", async (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV,
     database: {
-      activeConnections: getConnectionCount()
-    }
+      activeConnections: getConnectionCount(),
+    },
   };
 
   const statusCode = health.status === "healthy" ? 200 : 503;
   res.status(statusCode).json(health);
+});
+
+app.get("/", async (req, res) => {
+  const health = {
+    status: "working",
+  };
+
+  res.status(200).json(health);
 });
 
 // API routes - V1
@@ -118,42 +134,42 @@ const gracefulShutdown = async (signal) => {
 
   // Stop accepting new connections
   server.close(async () => {
-    logger.info('HTTP server closed');
-    console.log('✅ HTTP server closed'.green);
+    logger.info("HTTP server closed");
+    console.log("✅ HTTP server closed".green);
 
     try {
       // Close all database connections
       await closeAllConnections();
       // Close all active change streams
       closeAllStreams();
-      console.log('✅ All database connections and streams closed'.green);
-      logger.info('Graceful shutdown completed successfully');
+      console.log("✅ All database connections and streams closed".green);
+      logger.info("Graceful shutdown completed successfully");
       process.exit(0);
     } catch (error) {
-      logger.error('Error during shutdown:', error);
-      console.error('❌ Error during shutdown:', error.message);
+      logger.error("Error during shutdown:", error);
+      console.error("❌ Error during shutdown:", error.message);
       process.exit(1);
     }
   });
 
   // Force shutdown after timeout
   setTimeout(() => {
-    logger.error('Forced shutdown after timeout');
-    console.error('❌ Forced shutdown - timeout exceeded'.red);
+    logger.error("Forced shutdown after timeout");
+    console.error("❌ Forced shutdown - timeout exceeded".red);
     process.exit(1);
   }, DEFAULTS.SHUTDOWN_TIMEOUT_MS);
 };
 
 // Handle shutdown signals
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
-  logger.error('UNHANDLED REJECTION! Shutting down...', {
+  logger.error("UNHANDLED REJECTION! Shutting down...", {
     name: err.name,
     message: err.message,
-    stack: err.stack
+    stack: err.stack,
   });
   console.error("❌ UNHANDLED REJECTION! 💥 Shutting down...".red);
   console.error(err);
@@ -164,7 +180,10 @@ process.on("unhandledRejection", (err) => {
       closeAllStreams();
       process.exit(1);
     } catch (error) {
-      logger.error('Error closing connections during unhandled rejection:', error);
+      logger.error(
+        "Error closing connections during unhandled rejection:",
+        error
+      );
       process.exit(1);
     }
   });
@@ -172,10 +191,10 @@ process.on("unhandledRejection", (err) => {
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
-  logger.error('UNCAUGHT EXCEPTION! Shutting down...', {
+  logger.error("UNCAUGHT EXCEPTION! Shutting down...", {
     name: err.name,
     message: err.message,
-    stack: err.stack
+    stack: err.stack,
   });
   console.error("❌ UNCAUGHT EXCEPTION! 💥 Shutting down...".red);
   console.error(err);
