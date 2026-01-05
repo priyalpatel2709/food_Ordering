@@ -108,6 +108,7 @@ app.use("/api/v1/orderType", orderTypeRoutes);
 app.use("/api/v1/kds", kdsRoutes);
 // app.use("/api/v1/customer/dine-in", customerDineInRoutes);
 app.use("/api/v1/dashboard", dashboardRouters);
+app.use("/api/v1/payment", paymentRoutes);
 
 // API routes - V2
 app.use("/api/v2/menu", menuRouteV2);

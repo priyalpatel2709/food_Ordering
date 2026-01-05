@@ -32,13 +32,21 @@ const crudOperations = (models) => {
         const search = req.query.search;
         const skip = (page - 1) * limit;
 
+        const sortOrder = req.query.sort;
+
+        const sort = {
+          createdAt: sortOrder === "-1" ? -1 : 1,
+        };
+
         // Build Filter
         let filter = {};
 
         // Determine fields to search: Query Params > Config > Default Empty
         let fieldsToSearch = models.searchFields || [];
         if (req.query.searchFields) {
-          fieldsToSearch = req.query.searchFields.split(',').map(f => f.trim());
+          fieldsToSearch = req.query.searchFields
+            .split(",")
+            .map((f) => f.trim());
         }
 
         if (search && fieldsToSearch.length > 0) {
@@ -52,7 +60,12 @@ const crudOperations = (models) => {
         const totalDocs = await mainModel.countDocuments(filter);
         const totalPages = Math.ceil(totalDocs / limit);
 
-        let query = mainModel.find(filter).skip(skip).limit(limit).select(select);
+        let query = mainModel
+          .find(filter)
+          .skip(skip)
+          .limit(limit)
+          .select(select)
+          .sort(sort);
         query = await populateNestedFields(query, populateModels);
         const documents = await query;
 

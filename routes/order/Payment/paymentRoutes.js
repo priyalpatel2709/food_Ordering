@@ -18,7 +18,7 @@ router.post(
   validateRequest(schemas.giveRefund),
   identifyTenant,
   protect,
-  allowedRoles("admin"),
+  allowedRoles("staff"),
   giveRefund
 );
 

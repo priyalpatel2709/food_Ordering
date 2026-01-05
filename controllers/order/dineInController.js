@@ -307,7 +307,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
   // For simplicity, we create basic PENDING order.
 
   const newOrder = new Order({
-    restaurantId: `restaurant_${req.restaurantId}`,
+    // restaurantId: `restaurant_${req.restaurantId}`,
     customerId: req.user._id,
     tableNumber: tableNumber.toString(),
     serverName: req.user.name,
@@ -438,6 +438,14 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
       .status(HTTP_STATUS.BAD_REQUEST)
       .json({ status: "error", message: "Payment information is required" });
   }
+
+  // Handle Discounts if provided
+  if (payment.discount) {
+    order.discount = payment.discount;
+    // Recalculate order totals to apply the discount to final charge and balanceDue
+    await recalculateOrderTotals(order, req.restaurantDb);
+  }
+
   const { method, transactionId, gateway, notes } = payment;
   const amount = Number(payment.amount);
 

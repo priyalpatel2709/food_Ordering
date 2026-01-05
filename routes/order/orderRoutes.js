@@ -42,10 +42,10 @@ const {
 } = require("../../controllers/order/groupOrderController");
 
 // Group Ordering Routes
-router.get("/dine-in/group/join", identifyTenant, protect, joinGroupSession);
-router.post("/dine-in/group/:orderId/add", identifyTenant, protect, addItemToGroupCart);
-router.patch("/dine-in/group/:orderId/item/:itemId", identifyTenant, protect, updateGroupCartItem);
-router.post("/dine-in/group/:orderId/submit", identifyTenant, protect, submitGroupOrder);
+// router.get("/dine-in/group/join", identifyTenant, protect, joinGroupSession);
+// router.post("/dine-in/group/:orderId/add", identifyTenant, protect, addItemToGroupCart);
+// router.patch("/dine-in/group/:orderId/item/:itemId", identifyTenant, protect, updateGroupCartItem);
+// router.post("/dine-in/group/:orderId/submit", identifyTenant, protect, submitGroupOrder);
 
 // Dine-In Routes
 router.get("/tables", identifyTenant, protect, getTablesStatus);
@@ -89,7 +89,7 @@ router.get(
   "/",
   identifyTenant,
   protect,
-  allowedRoles(["manager"]),
+  allowedRoles(["staff"]),
   queryHandler,
   getAllOrders
 );
