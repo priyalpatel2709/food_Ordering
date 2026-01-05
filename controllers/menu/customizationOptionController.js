@@ -14,6 +14,7 @@ const getAllCustomizationOptions = asyncHandler(async (req, res, next) => {
   const CustomizationOption = getCustomizationOptionModel(req.restaurantDb);
   const customizationOptionOperations = crudOperations({
     mainModel: CustomizationOption,
+    searchFields: ["name"],
   });
   customizationOptionOperations.getAll(req, res, next);
 });

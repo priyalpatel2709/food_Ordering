@@ -14,6 +14,7 @@ const getAllDiscounts = asyncHandler(async (req, res, next) => {
   const Discount = getDiscountModel(req.restaurantDb);
   const discountOperations = crudOperations({
     mainModel: Discount,
+    searchFields: ["discountCode", "discountName"],
   });
   discountOperations.getAll(req, res, next);
 });

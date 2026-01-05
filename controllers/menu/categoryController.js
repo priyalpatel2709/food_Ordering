@@ -14,6 +14,7 @@ const getAllCategories = asyncHandler(async (req, res, next) => {
   const Category = getCategoryModel(req.restaurantDb);
   const categoryOperations = crudOperations({
     mainModel: Category,
+    searchFields: ["name", "description"],
   });
   categoryOperations.getAll(req, res, next);
 });

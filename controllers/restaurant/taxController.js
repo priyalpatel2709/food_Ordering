@@ -14,6 +14,7 @@ const getAllTaxes = asyncHandler(async (req, res, next) => {
   const Tax = getTaxModel(req.restaurantDb);
   const taxOperations = crudOperations({
     mainModel: Tax,
+    searchFields: ["name"],
   });
   taxOperations.getAll(req, res, next);
 });

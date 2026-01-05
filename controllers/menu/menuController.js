@@ -30,6 +30,7 @@ const getAllMenus = asyncHandler(async (req, res, next) => {
 
   const menuOperations = crudOperations({
     mainModel: Menu,
+    searchFields: ["name", "description"],
     populateModels: [
       {
         field: "categories",

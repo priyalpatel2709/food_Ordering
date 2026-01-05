@@ -41,7 +41,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                         $group: {
                             _id: null,
                             grossSales: { $sum: "$orderFinalCharge" },
-                            netSales: { $sum: "$subtotal" },
+                            netSales: { $sum: { $subtract: ["$subtotal", { $ifNull: ["$refunds.remainingCharge", 0] }] } },
                             totalTax: { $sum: "$tax.totalTaxAmount" },
                             totalTips: { $sum: { $add: ["$restaurantTipCharge", "$deliveryTipCharge"] } },
                             totalDiscounts: { $sum: "$discount.totalDiscountAmount" },
@@ -65,7 +65,22 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                     { $sort: { _id: 1 } } // Sort by date ascending
                 ],
 
-                // 3. Payment Method Breakdown
+                // 3. Refund Trend (Graph Data) - Group by Day
+                "refundsTrend": [
+                    {
+                        $match: { "refunds.remainingCharge": { $gt: 0 } }
+                    },
+                    {
+                        $group: {
+                            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                            amount: { $sum: "$refunds.remainingCharge" },
+                            count: { $sum: 1 }
+                        }
+                    },
+                    { $sort: { _id: 1 } }
+                ],
+
+                // 4. Payment Method Breakdown
                 "paymentAnalysis": [
                     { $unwind: "$payment.history" },
                     {
@@ -77,7 +92,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                     }
                 ],
 
-                // 4. Order Type / Source Analysis
+                // 5. Order Type / Source Analysis
                 "orderDistribution": [
                     {
                         $group: {
@@ -92,7 +107,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                     }
                 ],
 
-                // 5. Product Performance (Top Items)
+                // 6. Product Performance (Top Items)
                 "topItems": [
                     { $unwind: "$orderItems" },
                     {
@@ -123,7 +138,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                     }
                 ],
 
-                // 6. Operational Efficiency
+                // 7. Operational Efficiency
                 "operations": [
                     {
                         $match: { orderStatus: ORDER_STATUS.COMPLETED }
@@ -143,7 +158,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                     }
                 ],
 
-                // 7. Hourly Peak Analysis
+                // 8. Hourly Peak Analysis
                 "hourlyTraffic": [
                     {
                         $project: { hour: { $hour: "$createdAt" } }
@@ -154,7 +169,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                     { $sort: { _id: 1 } }
                 ],
 
-                // 8. Staff Performance (New)
+                // 9. Staff Performance (New)
                 "staffPerformance": [
                     { $match: { serverName: { $exists: true, $ne: null } } },
                     {
@@ -168,7 +183,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                     { $sort: { totalSales: -1 } }
                 ],
 
-                // 9. Top Customers (New)
+                // 10. Top Customers (New)
                 "topCustomers": [
                     { $match: { customerId: { $ne: null } } },
                     {
@@ -238,6 +253,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
                 canceledOrders: lostStats.count
             },
             salesChart: result.salesTrend,
+            refundsChart: result.refundsTrend,
             topItems: result.topItems,
             paymentStats: result.paymentAnalysis,
             staffPerformance: result.staffPerformance,

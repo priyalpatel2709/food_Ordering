@@ -22,8 +22,10 @@ const getAllItems = asyncHandler(async (req, res, next) => {
   const CustomizationOptions = getCustomizationOptionModel(req.restaurantDb);
   const TaxRate = getTaxModel(req.restaurantDb);
 
+
   const itemOperations = crudOperations({
     mainModel: Item,
+    searchFields: ["name", "description"],
     populateModels: [
       {
         field: "category",

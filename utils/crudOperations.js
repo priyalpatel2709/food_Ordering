@@ -29,12 +29,30 @@ const crudOperations = (models) => {
       try {
         const page = req.query.page ? parseInt(req.query.page) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+        const search = req.query.search;
         const skip = (page - 1) * limit;
 
-        const totalDocs = await mainModel.countDocuments();
+        // Build Filter
+        let filter = {};
+
+        // Determine fields to search: Query Params > Config > Default Empty
+        let fieldsToSearch = models.searchFields || [];
+        if (req.query.searchFields) {
+          fieldsToSearch = req.query.searchFields.split(',').map(f => f.trim());
+        }
+
+        if (search && fieldsToSearch.length > 0) {
+          filter = {
+            $or: fieldsToSearch.map((field) => ({
+              [field]: { $regex: search, $options: "i" },
+            })),
+          };
+        }
+
+        const totalDocs = await mainModel.countDocuments(filter);
         const totalPages = Math.ceil(totalDocs / limit);
 
-        let query = mainModel.find({}).skip(skip).limit(limit).select(select);
+        let query = mainModel.find(filter).skip(skip).limit(limit).select(select);
         query = await populateNestedFields(query, populateModels);
         const documents = await query;
 
