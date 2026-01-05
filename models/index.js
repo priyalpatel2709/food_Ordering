@@ -19,6 +19,11 @@ const {
   getRefundModel,
 } = require("./order/index");
 
+const {
+  getRoleModel,
+  getPermissionModel,
+} = require("./rbac/index");
+
 module.exports = {
   getUserModel,
   getRestaurantModel,
@@ -31,4 +36,6 @@ module.exports = {
   getOrderModel,
   getOrderTypeModel,
   getRefundModel,
+  getRoleModel,
+  getPermissionModel,
 };

@@ -37,4 +37,5 @@ module.exports = {
   menuRouteV2,
   kdsRoutes,
   dashboardRouters,
+  rbacRoutes: require("./rbac/rbacRoutes"),
 };

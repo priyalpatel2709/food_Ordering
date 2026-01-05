@@ -102,6 +102,13 @@ const getUsersByRestaurantId = asyncHandler(async (req, res, next) => {
       return res.status(400).json({ message: "restaurantId is required" });
     }
 
+    // Check if user is authorized to access this restaurant
+    if (req.user.restaurantId !== restaurantId) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to access this restaurant" });
+    }
+
     // Fetch users by restaurantId
     const users = await User.find({ restaurantId }).lean();
 

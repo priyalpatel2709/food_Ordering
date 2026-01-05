@@ -28,7 +28,13 @@ const userModel = new mongoose.Schema(
         },
       },
     ],
-    roleName: { type: String },
+    roleName: { type: String }, // Deprecated: Legacy string-based role
+    roles: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Role",
+      },
+    ],
     access: [{ type: String }],
     metaData: [
       {
