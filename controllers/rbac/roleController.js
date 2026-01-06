@@ -25,7 +25,8 @@ const assignRoleToUser = asyncHandler(async (req, res) => {
   }
 
   const User = getUserModel(req.usersDb);
-  const Role = getRoleModel(req.usersDb); // Assuming roles are in user DB or same DB context
+  const Role = getRoleModel(req.usersDb);
+  const Permissions = getPermissionModel(req.usersDb);
 
   // 1. Fetch Target User
   const targetUser = await User.findById(userId);
@@ -59,7 +60,7 @@ const assignRoleToUser = asyncHandler(async (req, res) => {
   // 3. Fetch Target Roles
   const rolesToAssign = await Role.find({
     _id: { $in: roleIds },
-  }).populate("permissions");
+  }).populate({ path: "permissions", model: Permissions });
 
   if (rolesToAssign.length !== roleIds.length) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -87,7 +88,7 @@ const assignRoleToUser = asyncHandler(async (req, res) => {
   // Get Requester's Permissions
   const requesterRoles = await Role.find({
     _id: { $in: req.user.roles },
-  }).populate("permissions");
+  }).populate({ path: "permissions", model: Permissions });
 
   // Flatten requester permissions
   const requesterPermissionSet = new Set();
@@ -235,6 +236,7 @@ const createRole = asyncHandler(async (req, res) => {
  */
 const getAllRole = asyncHandler(async (req, res) => {
   const Role = getRoleModel(req.usersDb);
+  const Permissions = getPermissionModel(req.usersDb);
 
   // Fetch System Roles AND Tenant Roles
   const query = {
@@ -245,7 +247,7 @@ const getAllRole = asyncHandler(async (req, res) => {
   };
 
   const roles = await Role.find(query)
-    .populate("permissions")
+    .populate({ path: "permissions", model: Permissions })
     .sort({ isSystem: -1, name: 1 }); // System roles first
 
   res.status(HTTP_STATUS.OK).json({
@@ -356,8 +358,6 @@ const createPermission = asyncHandler(async (req, res) => {
   });
 
   await newPerm.save();
-
-  console.log("newPerm $", newPerm);
 
   res.status(HTTP_STATUS.CREATED).json({
     status: "success",

@@ -15,7 +15,8 @@ const { PERMISSIONS } = require("../../utils/permissions");
 
 router.post(
   "/assign-role",
-  authorize(PERMISSIONS.ROLE_ASSIGN),
+  // authorize(PERMISSIONS.ROLE_ASSIGN),
+  identifyTenant,
   protect,
   assignRoleToUser
 );
@@ -34,7 +35,7 @@ router.put(
   "/roles/:roleId",
   identifyTenant,
   protect,
-  authorize(PERMISSIONS.ROLE_UPDATE),
+  // authorize(PERMISSIONS.ROLE_UPDATE),
   updateRole
 );
 

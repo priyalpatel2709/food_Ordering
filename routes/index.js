@@ -22,6 +22,8 @@ const {
   kdsRoutes,
 } = require("./order/index");
 
+const { rbacRoutes } = require("./rbac/index");
+
 module.exports = {
   userRouters,
   restaurantRouters,
@@ -37,5 +39,5 @@ module.exports = {
   menuRouteV2,
   kdsRoutes,
   dashboardRouters,
-  rbacRoutes: require("./rbac/rbacRoutes"),
+  rbacRoutes,
 };

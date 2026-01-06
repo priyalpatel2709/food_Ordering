@@ -6,6 +6,8 @@ const {
   getOrderModel,
   getOrderTypeModel,
   getItemModel,
+  getPermissionModel,
+  getRoleModel,
 } = require("../../models");
 const createError = require("http-errors");
 
@@ -93,37 +95,47 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 });
 
 const getUsersByRestaurantId = asyncHandler(async (req, res, next) => {
-  try {
-    const User = getUserModel(req.usersDb);
-    const { restaurantId } = req.params;
+  const User = getUserModel(req.usersDb);
+  const Role = getRoleModel(req.usersDb);
+  const Permission = getPermissionModel(req.usersDb);
 
-    // Validate restaurantId
-    if (!restaurantId) {
-      return res.status(400).json({ message: "restaurantId is required" });
-    }
+  const { restaurantId } = req.params;
 
-    // Check if user is authorized to access this restaurant
-    if (req.user.restaurantId !== restaurantId) {
-      return res
-        .status(403)
-        .json({ message: "You are not authorized to access this restaurant" });
-    }
-
-    // Fetch users by restaurantId
-    const users = await User.find({ restaurantId }).lean();
-
-    // Check if no users are found
-    if (users.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No users found for this restaurant" });
-    }
-
-    // Return the found users
-    res.status(200).json(users);
-  } catch (error) {
-    next(error); // Properly propagate the error to the error handler
+  if (!restaurantId) {
+    return res.status(400).json({ message: "restaurantId is required" });
   }
+
+  // 🔒 Tenant isolation
+  if (req.user.restaurantId !== restaurantId) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const users = await User.find(
+    { restaurantId },
+    {
+      password: 0,
+      refreshToken: 0,
+      __v: 0,
+    }
+  )
+    .populate({
+      path: "roles",
+      select: "name isSystem permissions",
+      populate: {
+        path: "permissions",
+        select: "name module description",
+        model: Permission,
+      },
+      model: Role,
+    })
+    .lean();
+
+  // ✅ Empty list is valid
+  res.status(200).json({
+    status: "success",
+    count: users.length,
+    data: users,
+  });
 });
 
 const getAllOrders = asyncHandler(async (req, res, next) => {
