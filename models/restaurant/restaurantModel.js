@@ -2,19 +2,19 @@ const mongoose = require("mongoose");
 
 const restaurantModel = new mongoose.Schema(
   {
-    name: { type: String, },
+    name: { type: String },
     address: { type: String },
     operatingHours: {
       type: Map,
       of: {
-        openTime: { type: String, required: true },
-        closeTime: { type: String, required: true },
+        openTime: { type: String },
+        closeTime: { type: String },
       },
     },
     phone: { type: String },
     email: { type: String },
     image: { type: String },
-    restaurantId: { type: String, required: true, unique: true },
+    restaurantId: { type: String, unique: true },
     isActive: { type: Boolean, default: true },
     latitude: { type: Number },
     longitude: { type: Number },
@@ -46,8 +46,10 @@ const restaurantModel = new mongoose.Schema(
       workflow: [{ type: String }],
       stations: [
         {
-          name: { type: String, required: true },
-          categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
+          name: { type: String },
+          categories: [
+            { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+          ],
         },
       ],
     },

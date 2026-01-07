@@ -7,6 +7,7 @@ const {
   getItemModel,
   getTaxModel,
   getCustomizationOptionModel,
+  getDiscountModel,
 } = require("../../models/index");
 const { getQueryParams } = require("../../utils/utils");
 const { format } = require("date-fns");
@@ -26,6 +27,7 @@ const getAllMenus = asyncHandler(async (req, res, next) => {
   const Category = getCategoryModel(req.restaurantDb);
   const Item = getItemModel(req.restaurantDb);
   const TaxRate = getTaxModel(req.restaurantDb);
+  const Discount = getDiscountModel(req.restaurantDb);
   const CustomizationOptions = getCustomizationOptionModel(req.restaurantDb);
 
   const menuOperations = crudOperations({
@@ -51,7 +53,12 @@ const getAllMenus = asyncHandler(async (req, res, next) => {
       {
         field: "taxes",
         model: TaxRate,
-        select: getQueryParams(req.queryOptions?.select?.taxRate),
+        // select: getQueryParams(req.queryOptions?.select?.taxRate),
+      },
+      {
+        field: "discounts",
+        model: Discount,
+        // select: getQueryParams(req.queryOptions?.select?.taxRate),
       },
     ],
   });

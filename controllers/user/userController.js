@@ -37,12 +37,14 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     // Return user info and generated token
     res.status(201).json({
-      _id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
+      ...newUser._doc,
       token: generateToken(newUser._id, restaurantId),
-      restaurantId: newUser.restaurantId,
-      role: newUser.roleName,
+      // _id: newUser._id,
+      // name: newUser.name,
+      // email: newUser.email,
+      // token: generateToken(newUser._id, restaurantId),
+      // restaurantId: newUser.restaurantId,
+      // role: newUser.roleName,
     });
   } catch (error) {
     // Handle validation errors
@@ -57,9 +59,22 @@ const registerUser = asyncHandler(async (req, res, next) => {
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const User = getUserModel(req.usersDb);
+  const Role = getRoleModel(req.usersDb);
+  const Permission = getPermissionModel(req.usersDb);
 
   // Find user by email
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email })
+    .populate({
+      path: "roles",
+      model: Role,
+      populate: {
+        path: "permissions",
+
+        model: Permission,
+      },
+    })
+    .select("-password -__v")
+    .lean();
 
   // Validate user credentials
   // if (!user || !(await user.matchPassword(password))) {
@@ -67,14 +82,7 @@ const authUser = asyncHandler(async (req, res) => {
   // }
 
   // Return user info and generated token
-  res.json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    token: generateToken(user._id, user.restaurantId),
-    restaurantId: user.restaurantId,
-    role: user.roleName,
-  });
+  res.json({ ...user, token: generateToken(user._id, user.restaurantId) });
 });
 
 const deleteById = asyncHandler(async (req, res, next) => {
@@ -99,16 +107,16 @@ const getUsersByRestaurantId = asyncHandler(async (req, res, next) => {
   const Role = getRoleModel(req.usersDb);
   const Permission = getPermissionModel(req.usersDb);
 
-  const { restaurantId } = req.params;
+  const restaurantId = req.user.restaurantId;
 
   if (!restaurantId) {
     return res.status(400).json({ message: "restaurantId is required" });
   }
 
   // 🔒 Tenant isolation
-  if (req.user.restaurantId !== restaurantId) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+  // if (req.user.restaurantId !== restaurantId) {
+  //   return res.status(403).json({ message: "Forbidden" });
+  // }
 
   const users = await User.find(
     { restaurantId },

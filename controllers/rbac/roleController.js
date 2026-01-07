@@ -332,10 +332,10 @@ const updateRole = asyncHandler(async (req, res) => {
  * @access  Private (Super Admin)
  */
 const createPermission = asyncHandler(async (req, res) => {
-  const { name, description, module } = req.body;
+  const { name, description, module, restaurantId } = req.body;
   const Permission = getPermissionModel(req.usersDb);
 
-  if (!name || !module) {
+  if (!name || !module || !restaurantId) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
       status: "error",
       message: "Name and Module are required.",
@@ -354,6 +354,7 @@ const createPermission = asyncHandler(async (req, res) => {
     name: name.toUpperCase(),
     description,
     module: module.toUpperCase(),
+    restaurantId: restaurantId,
     isSystem: true, // For now, all API created perms are system.
   });
 
@@ -372,7 +373,17 @@ const createPermission = asyncHandler(async (req, res) => {
  */
 const getAllPermissions = asyncHandler(async (req, res) => {
   const Permission = getPermissionModel(req.usersDb);
-  const permissions = await Permission.find({}).sort({ module: 1, name: 1 });
+  const query = {
+    $or: [
+      { isSystem: true }, // Global System roles
+      { restaurantId: req.user.restaurantId }, // My Custom Roles
+    ],
+  };
+  const permissions = await Permission.find(query);
+  // .sort({
+  //   module: 1,
+  //   name: 1,
+  // });
 
   // Group by Module for easier UI
   const grouped = {};

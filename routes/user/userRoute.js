@@ -12,16 +12,11 @@ const {
   getAllOrders,
 } = require("../../controllers/user/userController");
 
-router.post("/", identifyTenant,registerUser);
+router.post("/", identifyTenant, registerUser);
 router.post("/login", identifyTenant, authUser);
 router.delete("/:id", identifyTenant, protect, deleteById);
 router.get("/allUsers", identifyTenant, protect, getAllUsers);
-router.get(
-  "/restaurant/:restaurantId",
-  identifyTenant,
-  protect,
-  getUsersByRestaurantId
-);
+router.get("/staff", identifyTenant, protect, getUsersByRestaurantId);
 
 router.get("/orders", identifyTenant, protect, getAllOrders);
 

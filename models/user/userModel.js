@@ -36,6 +36,11 @@ const userModel = new mongoose.Schema(
       },
     ],
     access: [{ type: String }],
+    isSystem: {
+      type: Boolean,
+      default: false,
+      // System roles cannot be deleted
+    },
     metaData: [
       {
         key: { type: String },

@@ -167,7 +167,7 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
 const getTablesStatus = asyncHandler(async (req, res) => {
   const Restaurant = getRestaurantModel(req.restaurantDb);
   const restaurantDoc = await Restaurant.findOne({
-    restaurantId: `restaurant_${req.restaurantId}`,
+    // restaurantId: `restaurant_${req.restaurantId}`,
   });
 
   if (!restaurantDoc) {

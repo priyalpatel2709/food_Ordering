@@ -138,15 +138,15 @@ const menuSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-menuSchema.pre("save", async function (next) {
-  for (let i = 0; i < this.items.length; i++) {
-    const itemData = await mongoose.model("Item").findById(this.items[i].item);
-    if (itemData) {
-      this.items[i].defaultPrice = itemData.price;
-    }
-  }
-  next();
-});
+// menuSchema.pre("save", async function (next) {
+//   for (let i = 0; i < this.items.length; i++) {
+//     const itemData = await mongoose.model("Item").findById(this.items[i].item);
+//     if (itemData) {
+//       this.items[i].defaultPrice = itemData.price;
+//     }
+//   }
+//   next();
+// });
 
 const getMenuModel = (connection) => {
   return connection.model("Menu", menuSchema);

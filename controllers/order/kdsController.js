@@ -194,7 +194,7 @@ const updateOrderItemStatus = asyncHandler(async (req, res) => {
 const getKDSConfig = asyncHandler(async (req, res) => {
   const Restaurant = getRestaurantModel(req.restaurantDb);
   const restaurant = await Restaurant.findOne({
-    restaurantId: `restaurant_${req.restaurantId}`,
+    // restaurantId: `restaurant_${req.restaurantId}`,
   });
 
   const workflow = restaurant?.kdsConfiguration?.workflow || [
