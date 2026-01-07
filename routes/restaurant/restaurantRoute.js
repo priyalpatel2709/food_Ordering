@@ -1,7 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const identifyTenant = require("../../middleware/IdentificationMiddleware");
-const { protect } = require("../../middleware/authMiddleware");
+
+const {
+  protect,
+  identifyTenant,
+  authorize,
+} = require("../../middleware/index");
+
+const { PERMISSIONS } = require("../../utils/permissions");
 
 const {
   createRestaurant,
@@ -11,10 +17,34 @@ const {
   updateById,
 } = require("../../controllers/restaurant/restaurantController");
 
-router.post("/", identifyTenant, protect, createRestaurant);
-router.get("/", identifyTenant, protect, getAllRestaurants);
-router.get("/:id", identifyTenant, protect, getRestaurantById);
-router.delete("/:id", identifyTenant, protect, deleteById);
-router.patch("/:id", identifyTenant, protect, updateById);
+router.post(
+  "/",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.RESTAURANT_CREATE),
+  createRestaurant
+);
+router.get(
+  "/",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.RESTAURANT_READ),
+  getAllRestaurants
+);
+router.get("/:id", identifyTenant, protect, authorize(PERMISSIONS.RESTAURANT_READ), getRestaurantById);
+router.delete(
+  "/:id",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.RESTAURANT_DELETE),
+  deleteById
+);
+router.patch(
+  "/:id",
+  identifyTenant,
+  authorize(PERMISSIONS.RESTAURANT_UPDATE),
+  protect,
+  updateById
+);
 
 module.exports = router;

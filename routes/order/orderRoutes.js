@@ -51,13 +51,32 @@ const {
 // router.post("/dine-in/group/:orderId/submit", identifyTenant, protect, submitGroupOrder);
 
 // Dine-In Routes
-router.get("/tables", identifyTenant, protect, getTablesStatus);
-router.post("/dine-in", identifyTenant, protect, createDineInOrder);
-router.put("/dine-in/:orderId/items", identifyTenant, protect, addItemsToOrder);
+router.get(
+  "/tables",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_READ),
+  getTablesStatus
+);
+router.post(
+  "/dine-in",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_CREATE),
+  createDineInOrder
+);
+router.put(
+  "/dine-in/:orderId/items",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_UPDATE),
+  addItemsToOrder
+);
 router.post(
   "/dine-in/:orderId/pay",
   identifyTenant,
   protect,
+  authorize(PERMISSIONS.ORDER_UPDATE),
   completeDineInCheckout
 );
 
@@ -65,9 +84,16 @@ router.delete(
   "/dine-in/:orderId/item/:itemId",
   identifyTenant,
   protect,
+  authorize(PERMISSIONS.ORDER_UPDATE),
   removeOrderItem
 );
-router.delete("/dine-in/:orderId", identifyTenant, protect, removeDineInOrder);
+router.delete(
+  "/dine-in/:orderId",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_DELETE),
+  removeDineInOrder
+);
 
 router.get("/my-orders", identifyTenant, protect, getUserOrders);
 
@@ -77,6 +103,7 @@ router.post(
   validateRequest(schemas.orderWithPayment),
   identifyTenant,
   protect,
+  authorize(PERMISSIONS.ORDER_CREATE),
   createOrderWithPayment
 );
 
@@ -86,30 +113,44 @@ router.post(
   // validateRequest(schemas.orderCreation),
   identifyTenant,
   protect,
+  // authorize(PERMISSIONS.ORDER_CREATE),
   createOrder
 );
 router.get(
   "/",
   identifyTenant,
   protect,
-  allowedRoles(["staff"]),
+  authorize(PERMISSIONS.ORDER_READ),
   queryHandler,
   getAllOrders
 );
-router.get("/:id", identifyTenant, protect, queryHandler, getOrderById);
-router.delete("/", identifyTenant, protect, allowedRoles(["admin"]), deleteAll);
+router.get(
+  "/:id",
+  identifyTenant,
+  protect,
+  queryHandler,
+  authorize(PERMISSIONS.ORDER_READ),
+  getOrderById
+);
+router.delete(
+  "/",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_DELETE),
+  deleteAll
+);
 router.delete(
   "/:id",
   identifyTenant,
   protect,
-  allowedRoles(["admin"]),
+  authorize(PERMISSIONS.ORDER_DELETE),
   deleteById
 );
 router.put(
   "/:id",
   identifyTenant,
   protect,
-  allowedRoles(["manager"]),
+  authorize(PERMISSIONS.ORDER_UPDATE),
   updateById
 );
 

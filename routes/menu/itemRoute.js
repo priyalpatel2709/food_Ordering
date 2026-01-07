@@ -5,7 +5,10 @@ const {
   identifyTenant,
   protect,
   queryHandler,
+  authorize,
 } = require("../../middleware/index");
+
+const { PERMISSIONS } = require("../../utils/permissions");
 
 const {
   createItem,
@@ -15,10 +18,10 @@ const {
   updateById,
 } = require("../../controllers/menu/itemController");
 
-router.post("/createItem", identifyTenant, protect, createItem);
-router.get("/", identifyTenant, queryHandler, protect, getAllItems);
-router.get("/:id", identifyTenant, queryHandler, protect, getItemById);
-router.delete("/:id", identifyTenant, protect, deleteById);
-router.patch("/:id", identifyTenant, protect, updateById);
+router.post("/createItem", identifyTenant, protect, authorize(PERMISSIONS.ITEM_CREATE), createItem);
+router.get("/", identifyTenant, queryHandler, protect, authorize(PERMISSIONS.ITEM_READ), getAllItems);
+router.get("/:id", identifyTenant, queryHandler, protect, authorize(PERMISSIONS.ITEM_READ), getItemById);
+router.delete("/:id", identifyTenant, protect, authorize(PERMISSIONS.ITEM_DELETE), deleteById);
+router.patch("/:id", identifyTenant, protect, authorize(PERMISSIONS.ITEM_UPDATE), updateById);
 
 module.exports = router;

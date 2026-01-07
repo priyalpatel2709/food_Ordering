@@ -1,7 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const identifyTenant = require("../../middleware/IdentificationMiddleware");
-const { protect } = require("../../middleware/authMiddleware");
+
+const {
+  protect,
+  identifyTenant,
+  authorize,
+} = require("../../middleware/index");
+
+const { PERMISSIONS } = require("../../utils/permissions");
 
 const {
   createCustomizationOption,
@@ -11,10 +17,28 @@ const {
   updateById,
 } = require("../../controllers/menu/customizationOptionController");
 
-router.post("/", identifyTenant, protect, createCustomizationOption);
-router.get("/", identifyTenant, protect, getAllCustomizationOptions);
-router.get("/:id", identifyTenant, protect, getCustomizationOptionById);
-router.delete("/:id", identifyTenant, protect, deleteById);
-router.patch("/:id", identifyTenant, protect, updateById);
+router.post(
+  "/",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.CUSTOMIZATION_CREATE),
+  createCustomizationOption
+);
+router.get("/", identifyTenant, protect, authorize(PERMISSIONS.CUSTOMIZATION_READ), getAllCustomizationOptions);
+router.get("/:id", identifyTenant, protect, authorize(PERMISSIONS.CUSTOMIZATION_READ), getCustomizationOptionById);
+router.delete(
+  "/:id",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.CUSTOMIZATION_DELETE),
+  deleteById
+);
+router.patch(
+  "/:id",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.CUSTOMIZATION_UPDATE),
+  updateById
+);
 
 module.exports = router;

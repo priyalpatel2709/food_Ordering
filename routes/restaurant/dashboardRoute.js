@@ -3,8 +3,10 @@ const router = express.Router();
 const {
   identifyTenant,
   protect,
-  allowedRoles,
+  authorize,
 } = require("../../middleware/index");
+const { PERMISSIONS } = require("../../utils/permissions");
+
 const {
   getDashboardStats,
   exportDashboardReport,
@@ -14,7 +16,7 @@ const {
  * Dashboard Routes
  * Only accessible by Manager and Admin
  */
-router.get("/stats", identifyTenant, protect, getDashboardStats);
-// router.get("/export", identifyTenant, protect, exportDashboardReport);
+router.get("/stats", identifyTenant, protect, authorize(PERMISSIONS.REPORT_VIEW), getDashboardStats);
+// router.get("/export", identifyTenant, protect, authorize(PERMISSIONS.REPORT_EXPORT), exportDashboardReport);
 
 module.exports = router;

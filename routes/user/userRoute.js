@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { identifyTenant, allowedRoles } = require("../../middleware/index");
+const { identifyTenant, authorize } = require("../../middleware/index");
 const { protect } = require("../../middleware/authMiddleware");
+const { PERMISSIONS } = require("../../utils/permissions");
 
 const {
   authUser,
@@ -14,10 +15,10 @@ const {
 
 router.post("/", identifyTenant, registerUser);
 router.post("/login", identifyTenant, authUser);
-router.delete("/:id", identifyTenant, protect, deleteById);
-router.get("/allUsers", identifyTenant, protect, getAllUsers);
-router.get("/staff", identifyTenant, protect, getUsersByRestaurantId);
+router.delete("/:id", identifyTenant, protect, authorize(PERMISSIONS.USER_DELETE), deleteById);
+router.get("/allUsers", identifyTenant, protect, authorize(PERMISSIONS.USER_READ), getAllUsers);
+router.get("/staff", identifyTenant, protect, authorize(PERMISSIONS.USER_READ), getUsersByRestaurantId);
 
-router.get("/orders", identifyTenant, protect, getAllOrders);
+router.get("/orders", identifyTenant, protect, authorize(PERMISSIONS.ORDER_READ), getAllOrders);
 
 module.exports = router;

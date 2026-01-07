@@ -1,4 +1,5 @@
 const { protect } = require("../middleware/authMiddleware");
+const { authorize } = require("../middleware/rbacMiddleware");
 const identifyTenant = require("./IdentificationMiddleware");
 const { queryHandler } = require("./queryHandler");
 const { validateRequest, schemas } = require("./validationMiddleware");
@@ -13,5 +14,6 @@ module.exports = {
   schemas,
   adminOnly,
   allowedRoles,
+  authorize,
   // requestIdMiddleware,
 };

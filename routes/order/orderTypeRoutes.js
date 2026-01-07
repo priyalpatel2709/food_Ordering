@@ -1,8 +1,13 @@
 const express = require("express");
 const router = express.Router();
 
-const { protect } = require("../../middleware/authMiddleware");
-const identifyTenant = require("../../middleware/IdentificationMiddleware");
+const {
+  protect,
+  identifyTenant,
+  authorize
+} = require("../../middleware/index");
+const { PERMISSIONS } = require("../../utils/permissions");
+
 const {
   createOrderType,
   getAllOrderTypes,
@@ -12,10 +17,10 @@ const {
 } = require("../../controllers/order/orderTypeController");
 
 
-router.post("/", identifyTenant, protect,createOrderType);
-router.get("/", identifyTenant, protect,getAllOrderTypes);
-router.get("/:id", identifyTenant, protect,getOrderTypeById);
-router.delete("/:id", identifyTenant, protect,deleteById);
-router.put("/:id", identifyTenant, protect,updateById);
+router.post("/", identifyTenant, protect, authorize(PERMISSIONS.RESTAURANT_UPDATE), createOrderType);
+router.get("/", identifyTenant, protect, authorize(PERMISSIONS.RESTAURANT_READ), getAllOrderTypes);
+router.get("/:id", identifyTenant, protect, authorize(PERMISSIONS.RESTAURANT_READ), getOrderTypeById);
+router.delete("/:id", identifyTenant, protect, authorize(PERMISSIONS.RESTAURANT_UPDATE), deleteById);
+router.put("/:id", identifyTenant, protect, authorize(PERMISSIONS.RESTAURANT_UPDATE), updateById);
 
 module.exports = router;
