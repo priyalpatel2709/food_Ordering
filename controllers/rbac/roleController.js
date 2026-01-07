@@ -246,7 +246,7 @@ const getAllRole = asyncHandler(async (req, res) => {
     ],
   };
 
-  const roles = await Role.find(query)
+  const roles = await Role.find({ restaurantId: req.user.restaurantId })
     .populate({ path: "permissions", model: Permissions })
     .sort({ isSystem: -1, name: 1 }); // System roles first
 
@@ -379,11 +379,12 @@ const getAllPermissions = asyncHandler(async (req, res) => {
       { restaurantId: req.user.restaurantId }, // My Custom Roles
     ],
   };
-  const permissions = await Permission.find(query);
-  // .sort({
-  //   module: 1,
-  //   name: 1,
-  // });
+  const permissions = await Permission.find({
+    restaurantId: req.user.restaurantId,
+  }).sort({
+    module: 1,
+    name: 1,
+  });
 
   // Group by Module for easier UI
   const grouped = {};
