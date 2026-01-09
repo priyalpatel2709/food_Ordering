@@ -14,8 +14,9 @@ const {
   ORDER_STATUS,
   PAYMENT_STATUS,
   TRANSACTION_STATUS,
-  HTTP_STATUS,
+  HTTP_STATUS
 } = require("../../utils/const");
+const { notifyOrderUpdate } = require("../../services/realtimeService");
 
 const createOrder = asyncHandler(async (req, res, next) => {
   try {
@@ -361,8 +362,32 @@ const deleteById = asyncHandler(async (req, res, next) => {
 
 const updateById = asyncHandler(async (req, res, next) => {
   const Order = getOrderModel(req.restaurantDb);
-  const orderOperations = crudOperations({ mainModel: Order });
-  orderOperations.updateById(req, res, next);
+
+  const updatedOrder = await Order.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  }).populate([
+    { path: "orderItems.item" },
+    { path: "tax.taxes.taxId" },
+    { path: "discount.discounts.discountId" }
+  ]);
+
+  if (!updatedOrder) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
+      status: "error",
+      message: "Order not found",
+    });
+  }
+
+  res.status(HTTP_STATUS.OK).json({
+    status: "success",
+    data: updatedOrder,
+  });
+
+  // Real-time update
+  if (updatedOrder.tableNumber) {
+    notifyOrderUpdate(req.restaurantId, updatedOrder.tableNumber, updatedOrder);
+  }
 });
 
 const deleteAll = asyncHandler(async (req, res, next) => {

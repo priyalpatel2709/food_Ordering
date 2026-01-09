@@ -42,7 +42,7 @@ router.delete(
 router.patch(
   "/:id",
   identifyTenant,
-  authorize(PERMISSIONS.RESTAURANT_UPDATE),
+  // authorize(PERMISSIONS.RESTAURANT_UPDATE),
   protect,
   updateById
 );

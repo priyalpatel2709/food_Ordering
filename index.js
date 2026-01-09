@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 // const compression = require("compression");
+const cors = require("cors");
 
 // Load environment variables first
 dotenv.config();
@@ -56,7 +57,10 @@ const app = express();
 // app.use(compression());
 
 // Apply security middleware
-securityMiddleware(app);
+// securityMiddleware(app);
+
+app.use(cors({ origin: true, credentials: true }));
+app.options("*", cors());
 
 // Apply logging middleware
 app.use(requestLogger);

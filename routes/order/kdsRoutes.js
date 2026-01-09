@@ -19,7 +19,15 @@ const {
 router.use(identifyTenant, protect);
 
 router.get("/", authorize(PERMISSIONS.KDS_VIEW), getKDSOrders);
-router.get("/config", authorize(PERMISSIONS.KDS_VIEW), getKDSConfig);
-router.patch("/:orderId/items/:itemId/status", authorize(PERMISSIONS.KDS_MANAGE), updateOrderItemStatus);
+router.get(
+  "/config",
+  //  authorize(PERMISSIONS.KDS_VIEW),
+  getKDSConfig
+);
+router.patch(
+  "/:orderId/items/:itemId/status",
+  authorize(PERMISSIONS.KDS_MANAGE),
+  updateOrderItemStatus
+);
 
 module.exports = router;

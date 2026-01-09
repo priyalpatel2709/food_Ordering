@@ -15,6 +15,10 @@ const {
   ORDER_STATUS_TRANSITIONS,
 } = require("../../utils/const");
 const { logger } = require("../../middleware/loggingMiddleware");
+const {
+  emitTableOrderUpdate,
+  emitTableStatusUpdate
+} = require("../../services/realtimeService");
 
 // Helper to recalculate order totals
 const recalculateOrderTotals = async (order, restaurantDb) => {
@@ -331,6 +335,14 @@ const createDineInOrder = asyncHandler(async (req, res) => {
     status: "success",
     data: savedOrder,
   });
+
+  // Real-time update
+  emitTableStatusUpdate(req.restaurantId, savedOrder.tableNumber, {
+    status: items.length > 0 ? "ongoing" : "occupied",
+    orderId: savedOrder._id,
+    amount: savedOrder.orderFinalCharge,
+    customerName: savedOrder.contactName || savedOrder.serverName
+  });
 });
 
 // 3. Add Items to Order
@@ -408,9 +420,26 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
 
   const saved = await order.save();
 
+  // Return success response
   res.status(HTTP_STATUS.OK).json({
     status: "success",
     data: saved,
+  });
+
+  // Populate for real-time notification
+  await saved.populate([
+    { path: "orderItems.item" },
+    { path: "discount.discounts.discountId" },
+    { path: "tax.taxes.taxId" }
+  ]);
+
+  // Real-time update
+  emitTableOrderUpdate(req.restaurantId, saved.tableNumber, saved);
+  emitTableStatusUpdate(req.restaurantId, saved.tableNumber, {
+    status: "ongoing",
+    orderId: saved._id,
+    amount: saved.orderFinalCharge,
+    customerName: saved.contactName || saved.serverName
   });
 });
 
@@ -488,6 +517,24 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
     status: "success",
     data: saved,
   });
+
+  // Populate for real-time notification
+  await saved.populate([
+    { path: "orderItems.item" },
+    { path: "discount.discounts.discountId" },
+    { path: "tax.taxes.taxId" }
+  ]);
+
+  // Real-time update - Notify the table page about status change/payment
+  emitTableOrderUpdate(req.restaurantId, saved.tableNumber, saved);
+
+  // Real-time update - Table is available if fully paid (Grid View)
+  emitTableStatusUpdate(req.restaurantId, saved.tableNumber, {
+    status: saved.orderStatus === ORDER_STATUS.COMPLETED ? "available" : "ongoing",
+    orderId: saved.orderStatus === ORDER_STATUS.COMPLETED ? null : saved._id,
+    amount: saved.orderFinalCharge,
+    customerName: saved.contactName || saved.serverName
+  });
 });
 
 // 5. Remove Dine-In Order (If New/Pending)
@@ -511,12 +558,23 @@ const removeDineInOrder = asyncHandler(async (req, res) => {
     });
   }
 
+  // Capture info for real-time notification before deletion
+  const tableNum = order.tableNumber;
+
   // Find and delete the order
   await Order.findByIdAndDelete(orderId);
 
   res.status(HTTP_STATUS.OK).json({
     status: "success",
     message: "Dine-in order removed successfully",
+  });
+
+  // Real-time update - Table is now available
+  emitTableStatusUpdate(req.restaurantId, tableNum, {
+    status: "available",
+    orderId: null,
+    amount: 0,
+    customerName: null
   });
 });
 
@@ -568,6 +626,22 @@ const removeOrderItem = asyncHandler(async (req, res) => {
     status: "success",
     message: "Item removed from order",
     data: order,
+  });
+
+  // Populate for real-time notification
+  await order.populate([
+    { path: "orderItems.item" },
+    { path: "discount.discounts.discountId" },
+    { path: "tax.taxes.taxId" }
+  ]);
+
+  // Real-time update
+  emitTableOrderUpdate(req.restaurantId, order.tableNumber, order);
+  emitTableStatusUpdate(req.restaurantId, order.tableNumber, {
+    status: order.orderStatus,
+    orderId: order._id,
+    amount: order.orderFinalCharge,
+    customerName: order.contactName || order.serverName
   });
 });
 
