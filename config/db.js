@@ -11,8 +11,7 @@ const connections = {};
  * @returns {string} The MongoDB connection URI
  */
 const getDatabaseUri = (restaurantId) => {
-  const template =
-    "mongodb+srv://priyal:Pp8141519898@priyalmongodb.a8jlmrk.mongodb.net/restaurant_{restaurantId}";
+  const template = process.env.MONGO_URI_LIVE;
   if (!template) {
     throw new Error("MONGO_URI environment variable is not set");
   }
