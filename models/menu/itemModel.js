@@ -23,6 +23,8 @@ const itemSchema = new mongoose.Schema(
     popularityScore: { type: Number, default: 0 },
     averageRating: { type: Number, min: 0, max: 5 },
     taxable: { type: Boolean, default: true },
+    inventoryQuantity: { type: Number, default: 0 },
+    isPopular: { type: Boolean, default: false },
     taxRate: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tax" }],
     minOrderQuantity: { type: Number, min: 1, default: 1 },
     maxOrderQuantity: { type: Number, min: 1 },
@@ -33,7 +35,7 @@ const itemSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const getItemModel = (connection) => {

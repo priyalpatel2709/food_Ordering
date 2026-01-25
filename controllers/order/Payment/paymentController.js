@@ -43,7 +43,7 @@ const giveRefund = asyncHandler(async (req, res, next) => {
       return res.status(400).json({
         status: "error",
         message: `Refund amount exceeds remaining refundable amount of $${remainingCharge.toFixed(
-          2
+          2,
         )}`,
       });
     }
@@ -83,7 +83,7 @@ const giveRefund = asyncHandler(async (req, res, next) => {
   } catch (error) {
     console.error(
       `Refund creation error (orderId: ${req.params.orderId}):`,
-      error
+      error,
     );
 
     res.status(500).json({
@@ -148,7 +148,7 @@ const processPayment = asyncHandler(async (req, res, next) => {
     order.payment.totalPaid += Number(amount);
     order.payment.balanceDue = Math.max(
       order.orderFinalCharge - order.payment.totalPaid,
-      0
+      0,
     );
 
     // Optionally update order status
@@ -173,7 +173,7 @@ const processPayment = asyncHandler(async (req, res, next) => {
   } catch (error) {
     console.error(
       `Payment processing error (orderId: ${req.params.orderId}):`,
-      error
+      error,
     );
     res.status(500).json({
       status: "error",
@@ -230,7 +230,7 @@ const applyDiscount = asyncHandler(async (req, res, next) => {
   } catch (error) {
     console.error(
       `Discount application error (orderId: ${req.params.orderId}):`,
-      error
+      error,
     );
     res.status(500).json({
       status: "error",
@@ -239,8 +239,107 @@ const applyDiscount = asyncHandler(async (req, res, next) => {
   }
 });
 
+const payForItem = asyncHandler(async (req, res) => {
+  const Order = getOrderModel(req.restaurantDb);
+  const { orderId, itemIndex, amount, method } = req.body;
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return res
+      .status(404)
+      .json({ status: "error", message: "Order not found" });
+  }
+
+  if (!order.orderItems[itemIndex]) {
+    return res
+      .status(400)
+      .json({ status: "error", message: "Item not found in order" });
+  }
+
+  const item = order.orderItems[itemIndex];
+  const remainingItemBalance = item.price * item.quantity - item.paidAmount;
+
+  if (amount > remainingItemBalance) {
+    return res.status(400).json({
+      status: "error",
+      message: `Amount exceeds remaining item balance of ${remainingItemBalance}`,
+    });
+  }
+
+  item.paidAmount += Number(amount);
+  if (item.paidAmount >= item.price * item.quantity) {
+    item.isFullyPaid = true;
+  }
+
+  const paymentEntry = {
+    method: method || "cash",
+    amount: Number(amount),
+    status: "complete",
+    processedAt: new Date(),
+    processedBy: req.user?._id,
+    notes: `Item-wise payment for ${itemIndex}`,
+  };
+
+  order.payment.history.push(paymentEntry);
+  order.payment.totalPaid += Number(amount);
+  order.payment.balanceDue = Math.max(
+    order.orderFinalCharge - order.payment.totalPaid,
+    0,
+  );
+
+  if (order.payment.balanceDue === 0) {
+    order.payment.paymentStatus = "paid";
+  } else {
+    order.payment.paymentStatus = "partially_paid";
+  }
+
+  await order.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Item payment processed",
+    data: {
+      itemPaidAmount: item.paidAmount,
+      isFullyPaid: item.isFullyPaid,
+      totalPaid: order.payment.totalPaid,
+      balanceDue: order.payment.balanceDue,
+    },
+  });
+});
+
+const generateBill = asyncHandler(async (req, res) => {
+  const Order = getOrderModel(req.restaurantDb);
+  const orderId = req.params.orderId;
+
+  const order = await Order.findById(orderId).populate("orderItems.item");
+  if (!order) {
+    return res
+      .status(404)
+      .json({ status: "error", message: "Order not found" });
+  }
+
+  // This would typically return a formatted JSON that the frontend uses to render a bill page
+  // Or we could trigger a PDF generation here if needed.
+  res.status(200).json({
+    status: "success",
+    data: {
+      orderId: order.orderId,
+      items: order.orderItems,
+      subtotal: order.subtotal,
+      tax: order.tax,
+      discount: order.discount,
+      total: order.orderFinalCharge,
+      paid: order.payment.totalPaid,
+      balance: order.payment.balanceDue,
+      status: order.payment.paymentStatus,
+    },
+  });
+});
+
 module.exports = {
   giveRefund,
   processPayment,
   applyDiscount,
+  payForItem,
+  generateBill,
 };

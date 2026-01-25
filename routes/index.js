@@ -5,6 +5,7 @@ const {
   discountRouters,
   taxRouters,
   dashboardRouters,
+  tableRouters,
 } = require("./restaurant/index");
 
 const {
@@ -20,6 +21,7 @@ const {
   orderTypeRoutes,
   paymentRoutes,
   kdsRoutes,
+  customerDineInRoutes,
 } = require("./order/index");
 
 const { rbacRoutes } = require("./rbac/index");
@@ -40,4 +42,6 @@ module.exports = {
   kdsRoutes,
   dashboardRouters,
   rbacRoutes,
+  tableRouters,
+  customerDineInRoutes,
 };

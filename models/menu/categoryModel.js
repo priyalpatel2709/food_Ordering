@@ -9,6 +9,7 @@ const categorySchema = new mongoose.Schema(
     description: { type: String },
     isActive: { type: Boolean, default: true },
     displayOrder: { type: Number }, // Sorting order
+    color: { type: String, default: "#000000" }, // For category UI color
     categoryImage: { type: String },
     metaData: [
       {
@@ -17,7 +18,7 @@ const categorySchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const getCategoryModel = (connection) => {

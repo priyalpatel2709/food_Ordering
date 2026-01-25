@@ -43,10 +43,36 @@ const updateById = asyncHandler(async (req, res, next) => {
   categoryOperations.updateById(req, res, next);
 });
 
+const reorderCategories = asyncHandler(async (req, res) => {
+  const Category = getCategoryModel(req.restaurantDb);
+  const { orders } = req.body; // Array of { id: string, displayOrder: number }
+
+  if (!orders || !Array.isArray(orders)) {
+    return res
+      .status(400)
+      .json({ status: "error", message: "Orders array is required" });
+  }
+
+  const bulkOps = orders.map((item) => ({
+    updateOne: {
+      filter: { _id: item.id },
+      update: { $set: { displayOrder: item.displayOrder } },
+    },
+  }));
+
+  await Category.bulkWrite(bulkOps);
+
+  res.status(200).json({
+    status: "success",
+    message: "Categories reordered successfully",
+  });
+});
+
 module.exports = {
   createCategory,
   getCategoryById,
   getAllCategories,
   deleteById,
   updateById,
+  reorderCategories,
 };

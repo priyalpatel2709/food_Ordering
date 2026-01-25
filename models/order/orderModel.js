@@ -13,7 +13,7 @@ const orderSchema = new mongoose.Schema(
     restaurantId: {
       type: String,
     },
-    source: { type: String, enum: ['staff', 'customer'], default: 'staff' },
+    source: { type: String, enum: ["staff", "customer"], default: "staff" },
     orderId: { type: String, unique: true },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -125,7 +125,14 @@ const orderSchema = new mongoose.Schema(
         quantity: { type: Number, min: 1, required: true },
         price: { type: Number, min: 0, required: true },
         discountPrice: { type: Number },
+        itemNote: { type: String }, // Added for item-wise notes
         specialInstructions: { type: String },
+        itemDiscount: {
+          discountId: { type: mongoose.Schema.Types.ObjectId, ref: "Discount" },
+          amount: { type: Number, default: 0 },
+        }, // Added for item-level discount
+        paidAmount: { type: Number, default: 0 }, // Track item-wise payment
+        isFullyPaid: { type: Boolean, default: false },
         modifiers: [
           {
             name: { type: String },
@@ -146,6 +153,10 @@ const orderSchema = new mongoose.Schema(
     preparationTimeEstimate: { type: Number },
     preparationStartTime: { type: Date },
     preparationEndTime: { type: Date },
+    tableId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Table",
+    },
     tableNumber: { type: String },
     serverName: { type: String },
     metaData: [
@@ -165,7 +176,7 @@ const orderSchema = new mongoose.Schema(
       ratedAt: { type: Date },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 orderSchema.pre("save", async function (next) {

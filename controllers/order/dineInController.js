@@ -6,6 +6,7 @@ const {
   getTaxModel,
   getDiscountModel,
   getUserModel,
+  getTableModel,
 } = require("../../models/index");
 const {
   ORDER_STATUS,
@@ -17,7 +18,7 @@ const {
 const { logger } = require("../../middleware/loggingMiddleware");
 const {
   emitTableOrderUpdate,
-  emitTableStatusUpdate
+  emitTableStatusUpdate,
 } = require("../../services/realtimeService");
 
 // Helper to recalculate order totals
@@ -52,7 +53,7 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
     if (orderItem.modifiers && Array.isArray(orderItem.modifiers)) {
       modifiersTotal = orderItem.modifiers.reduce(
         (sum, mod) => sum + (Number(mod.price) || 0),
-        0
+        0,
       );
     }
     const lineItemTotal = (price + modifiersTotal) * quantity;
@@ -92,7 +93,7 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
   }));
 
   const totalTaxAmount = parseFloat(
-    taxBreakdown.reduce((sum, t) => sum + t.taxCharge, 0).toFixed(2)
+    taxBreakdown.reduce((sum, t) => sum + t.taxCharge, 0).toFixed(2),
   );
 
   // Discounts (Global Discounts Logic - applied to subtotal usually)
@@ -108,7 +109,7 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
           amount = parseFloat(discountDoc.value);
         } else if (discountDoc.type === "percentage") {
           amount = parseFloat(
-            ((discountDoc.value * subtotal) / 100).toFixed(2)
+            ((discountDoc.value * subtotal) / 100).toFixed(2),
           );
         }
         discountCharge += amount;
@@ -137,7 +138,7 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
       delivery +
       deliveryTip -
       discountCharge
-    ).toFixed(2)
+    ).toFixed(2),
   );
 
   // Update Order
@@ -153,7 +154,7 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
   order.orderFinalCharge = orderFinalCharge;
   order.totalItemCount = order.orderItems.reduce(
     (sum, item) => sum + item.quantity,
-    0
+    0,
   );
 
   // Update balanceDue
@@ -161,7 +162,7 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
     order.payment = { totalPaid: 0, balanceDue: 0, history: [] };
   const totalPaid = order.payment.totalPaid || 0;
   order.payment.balanceDue = parseFloat(
-    (orderFinalCharge - totalPaid).toFixed(2)
+    (orderFinalCharge - totalPaid).toFixed(2),
   );
 
   return order;
@@ -169,63 +170,38 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
 
 // 1. Get Tables Status
 const getTablesStatus = asyncHandler(async (req, res) => {
-  const Restaurant = getRestaurantModel(req.restaurantDb);
-  const restaurantDoc = await Restaurant.findOne({
-    // restaurantId: `restaurant_${req.restaurantId}`,
-  });
+  const Table = getTableModel(req.restaurantDb);
 
-  if (!restaurantDoc) {
-    return res
-      .status(HTTP_STATUS.NOT_FOUND)
-      .json({ status: "error", message: "Restaurant configuration not found" });
-  }
+  const tables = await Table.find({})
+    .populate({
+      path: "currentOrderId",
+      select: "orderStatus orderFinalCharge contactName serverName",
+    })
+    .sort({ tableNumber: 1 });
 
-  const totalTables = restaurantDoc.tableConfiguration?.totalTables || 0;
-
-  const Order = getOrderModel(req.restaurantDb);
-  const activeStatuses = [
-    ORDER_STATUS.PENDING,
-    ORDER_STATUS.CONFIRMED,
-    ORDER_STATUS.PREPARING,
-    ORDER_STATUS.READY,
-    ORDER_STATUS.SERVED,
-  ];
-
-  const activeOrders = await Order.find({
-    orderStatus: { $in: activeStatuses },
-    tableNumber: { $exists: true, $ne: null },
-  });
-
-  const activeOrdersMap = {};
-  activeOrders.forEach((order) => {
-    if (order.tableNumber) activeOrdersMap[order.tableNumber] = order;
-  });
-
-  const tables = [];
-  for (let i = 1; i <= totalTables; i++) {
-    const tableNum = i.toString();
-    const order = activeOrdersMap[tableNum];
-
-    let status = "available";
-
-
-    if (order) {
-      status = order?.orderItems === undefined ? "occupied" : "ongoing";
-    }
-
-    tables.push({
-      tableNumber: tableNum,
-      status,
-      orderId: order ? order._id : null,
-      orderStatus: order ? order.orderStatus : null,
-      amount: order ? order.orderFinalCharge : 0,
-      customerName: order ? order.contactName : null,
+  if (!tables || tables.length === 0) {
+    return res.status(HTTP_STATUS.OK).json({
+      status: "success",
+      data: { totalTables: 0, tables: [] },
     });
   }
 
+  const tableData = tables.map((t) => ({
+    id: t._id,
+    tableNumber: t.tableNumber,
+    status: t.status,
+    seatingCapacity: t.seatingCapacity,
+    orderId: t.currentOrderId ? t.currentOrderId._id : null,
+    orderStatus: t.currentOrderId ? t.currentOrderId.orderStatus : null,
+    amount: t.currentOrderId ? t.currentOrderId.orderFinalCharge : 0,
+    customerName: t.currentOrderId
+      ? t.currentOrderId.contactName || t.currentOrderId.serverName
+      : null,
+  }));
+
   res.status(HTTP_STATUS.OK).json({
     status: "success",
-    data: { totalTables, tables },
+    data: { totalTables: tableData.length, tables: tableData },
   });
 });
 
@@ -240,33 +216,25 @@ const createDineInOrder = asyncHandler(async (req, res) => {
   }
 
   const Order = getOrderModel(req.restaurantDb);
+  const Table = getTableModel(req.restaurantDb);
 
-  // Check if occupied
-  const activeStatuses = [
-    ORDER_STATUS.PENDING,
-    ORDER_STATUS.CONFIRMED,
-    ORDER_STATUS.PREPARING,
-    ORDER_STATUS.READY,
-    ORDER_STATUS.SERVED,
-  ];
-  const existingOrder = await Order.findOne({
-    tableNumber: tableNumber.toString(),
-    orderStatus: { $in: activeStatuses },
-  });
-
-  if (existingOrder) {
-    return res.status(HTTP_STATUS.CONFLICT).json({
+  // Check table status
+  const table = await Table.findOne({ tableNumber: tableNumber.toString() });
+  if (!table) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
       status: "error",
-      message: `Table ${tableNumber} is already occupied`,
+      message: `Table ${tableNumber} not found`,
     });
   }
 
-  // Call standard createOrder logic or replicate minimal
-  // If items are provided, process them. If not, create empty order (Occupied).
+  if (table.status !== "available" && table.status !== "cleaning") {
+    return res.status(HTTP_STATUS.CONFLICT).json({
+      status: "error",
+      message: `Table ${tableNumber} is currently ${table.status}`,
+    });
+  }
 
   const Item = getItemModel(req.restaurantDb);
-  // const Tax = getTaxModel(req.restaurantDb);
-  // const Discount = getDiscountModel(req.restaurantDb);
 
   let orderItems = [];
   let subtotal = 0;
@@ -306,26 +274,26 @@ const createDineInOrder = asyncHandler(async (req, res) => {
     }
   }
 
-  // Initialize simplified order
-  // Assuming no tax/discount logic for empty order, but if items exist we should calc.
-  // For simplicity, we create basic PENDING order.
-
   const newOrder = new Order({
-    // restaurantId: `restaurant_${req.restaurantId}`,
     customerId: req.user._id,
+    tableId: table._id,
     tableNumber: tableNumber.toString(),
     serverName: req.user.name,
-    source: 'staff',
+    source: "staff",
     orderItems,
     subtotal,
-    orderFinalCharge: subtotal, // Basic calc, assuming no tax/discount yet
+    orderFinalCharge: subtotal,
     orderStatus: ORDER_STATUS.PENDING,
-    // ... other defaults
   });
 
   const savedOrder = await newOrder.save();
 
-  // If items were added, run recalculate (taxes are derived from items now)
+  // Update Table Status
+  table.status = items.length > 0 ? "ongoing" : "occupied";
+  table.currentOrderId = savedOrder._id;
+  await table.save();
+
+  // If items were added, run recalculate
   if (items.length > 0) {
     const reCalced = await recalculateOrderTotals(savedOrder, req.restaurantDb);
     await reCalced.save();
@@ -341,7 +309,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
     status: items.length > 0 ? "ongoing" : "occupied",
     orderId: savedOrder._id,
     amount: savedOrder.orderFinalCharge,
-    customerName: savedOrder.contactName || savedOrder.serverName
+    customerName: savedOrder.contactName || savedOrder.serverName,
   });
 });
 
@@ -396,8 +364,8 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
       kdsTimestamps: {
         startedAt: null,
         preparedAt: null,
-        readyAt: null
-      }
+        readyAt: null,
+      },
     });
   }
 
@@ -420,6 +388,17 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
 
   const saved = await order.save();
 
+  // Update Table status to ongoing
+  const Table = getTableModel(req.restaurantDb);
+  if (saved.tableId) {
+    await Table.findByIdAndUpdate(saved.tableId, { status: "ongoing" });
+  } else {
+    await Table.findOneAndUpdate(
+      { tableNumber: saved.tableNumber },
+      { status: "ongoing" },
+    );
+  }
+
   // Return success response
   res.status(HTTP_STATUS.OK).json({
     status: "success",
@@ -430,7 +409,7 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
   await saved.populate([
     { path: "orderItems.item" },
     { path: "discount.discounts.discountId" },
-    { path: "tax.taxes.taxId" }
+    { path: "tax.taxes.taxId" },
   ]);
 
   // Real-time update
@@ -439,7 +418,7 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
     status: "ongoing",
     orderId: saved._id,
     amount: saved.orderFinalCharge,
-    customerName: saved.contactName || saved.serverName
+    customerName: saved.contactName || saved.serverName,
   });
 });
 
@@ -506,6 +485,20 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
     order.payment.paymentStatus = PAYMENT_STATUS.PAID;
     order.orderStatus = ORDER_STATUS.COMPLETED; // This frees the table
     order.payment.balanceDue = 0;
+
+    // Release Table
+    const Table = getTableModel(req.restaurantDb);
+    if (order.tableId) {
+      await Table.findByIdAndUpdate(order.tableId, {
+        status: "available",
+        currentOrderId: null,
+      });
+    } else {
+      await Table.findOneAndUpdate(
+        { tableNumber: order.tableNumber },
+        { status: "available", currentOrderId: null },
+      );
+    }
   } else {
     order.payment.paymentStatus = PAYMENT_STATUS.PARTIALLY_PAID;
     // Do NOT close table if partially paid
@@ -522,7 +515,7 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
   await saved.populate([
     { path: "orderItems.item" },
     { path: "discount.discounts.discountId" },
-    { path: "tax.taxes.taxId" }
+    { path: "tax.taxes.taxId" },
   ]);
 
   // Real-time update - Notify the table page about status change/payment
@@ -530,10 +523,11 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
 
   // Real-time update - Table is available if fully paid (Grid View)
   emitTableStatusUpdate(req.restaurantId, saved.tableNumber, {
-    status: saved.orderStatus === ORDER_STATUS.COMPLETED ? "available" : "ongoing",
+    status:
+      saved.orderStatus === ORDER_STATUS.COMPLETED ? "available" : "ongoing",
     orderId: saved.orderStatus === ORDER_STATUS.COMPLETED ? null : saved._id,
     amount: saved.orderFinalCharge,
-    customerName: saved.contactName || saved.serverName
+    customerName: saved.contactName || saved.serverName,
   });
 });
 
@@ -560,6 +554,21 @@ const removeDineInOrder = asyncHandler(async (req, res) => {
 
   // Capture info for real-time notification before deletion
   const tableNum = order.tableNumber;
+  const tableId = order.tableId;
+
+  // Release Table
+  const Table = getTableModel(req.restaurantDb);
+  if (tableId) {
+    await Table.findByIdAndUpdate(tableId, {
+      status: "available",
+      currentOrderId: null,
+    });
+  } else {
+    await Table.findOneAndUpdate(
+      { tableNumber: tableNum },
+      { status: "available", currentOrderId: null },
+    );
+  }
 
   // Find and delete the order
   await Order.findByIdAndDelete(orderId);
@@ -574,7 +583,7 @@ const removeDineInOrder = asyncHandler(async (req, res) => {
     status: "available",
     orderId: null,
     amount: 0,
-    customerName: null
+    customerName: null,
   });
 });
 
@@ -594,7 +603,8 @@ const removeOrderItem = asyncHandler(async (req, res) => {
   // Find the item in orderItems
   // Support both the order item's unique _id and the product's _id for flexibility
   const itemIndex = order.orderItems.findIndex(
-    (i) => i._id.toString() === itemId || (i.item && i.item.toString() === itemId)
+    (i) =>
+      i._id.toString() === itemId || (i.item && i.item.toString() === itemId),
   );
 
   if (itemIndex === -1) {
@@ -622,6 +632,19 @@ const removeOrderItem = asyncHandler(async (req, res) => {
   await recalculateOrderTotals(order, req.restaurantDb);
   await order.save();
 
+  // Update Table status if items become empty
+  if (order.orderItems.length === 0) {
+    const Table = getTableModel(req.restaurantDb);
+    if (order.tableId) {
+      await Table.findByIdAndUpdate(order.tableId, { status: "occupied" });
+    } else {
+      await Table.findOneAndUpdate(
+        { tableNumber: order.tableNumber },
+        { status: "occupied" },
+      );
+    }
+  }
+
   res.status(HTTP_STATUS.OK).json({
     status: "success",
     message: "Item removed from order",
@@ -632,16 +655,16 @@ const removeOrderItem = asyncHandler(async (req, res) => {
   await order.populate([
     { path: "orderItems.item" },
     { path: "discount.discounts.discountId" },
-    { path: "tax.taxes.taxId" }
+    { path: "tax.taxes.taxId" },
   ]);
 
   // Real-time update
   emitTableOrderUpdate(req.restaurantId, order.tableNumber, order);
   emitTableStatusUpdate(req.restaurantId, order.tableNumber, {
-    status: order.orderStatus,
+    status: order.orderItems.length > 0 ? "ongoing" : "occupied",
     orderId: order._id,
     amount: order.orderFinalCharge,
-    customerName: order.contactName || order.serverName
+    customerName: order.contactName || order.serverName,
   });
 });
 

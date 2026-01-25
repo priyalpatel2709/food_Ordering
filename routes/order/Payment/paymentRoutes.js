@@ -11,6 +11,8 @@ const {
 const {
   giveRefund,
   processPayment,
+  payForItem,
+  generateBill,
 } = require("../../../controllers/order/Payment/paymentController");
 
 router.post(
@@ -19,7 +21,7 @@ router.post(
   identifyTenant,
   protect,
   allowedRoles("staff"),
-  giveRefund
+  giveRefund,
 );
 
 router.post(
@@ -28,7 +30,11 @@ router.post(
   identifyTenant,
   protect,
   // allowedRoles("admin"),
-  processPayment
+  processPayment,
 );
+
+router.post("/payForItem", identifyTenant, protect, payForItem);
+
+router.get("/bill/:orderId", identifyTenant, protect, generateBill);
 
 module.exports = router;

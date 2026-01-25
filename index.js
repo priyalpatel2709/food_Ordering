@@ -10,12 +10,12 @@ dotenv.config();
 // Validate required environment variables
 const requiredEnvVars = ["JWT_SECRET", "MONGO_URI", "NODE_ENV"];
 const missingEnvVars = requiredEnvVars.filter(
-  (varName) => !process.env[varName]
+  (varName) => !process.env[varName],
 );
 
 if (missingEnvVars.length > 0) {
   console.error(
-    `❌ Missing required environment variables: ${missingEnvVars.join(", ")} `
+    `❌ Missing required environment variables: ${missingEnvVars.join(", ")} `,
   );
   console.error("Please create a .env file with the required variables");
   process.exit(1);
@@ -46,9 +46,10 @@ const {
   paymentRoutes,
   menuRouteV2,
   kdsRoutes,
-  // customerDineInRoutes,
+  customerDineInRoutes,
   dashboardRouters,
   rbacRoutes,
+  tableRouters,
 } = require("./routes");
 
 const app = express();
@@ -111,9 +112,10 @@ app.use("/api/v1/menu", menuRoute);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/orderType", orderTypeRoutes);
 app.use("/api/v1/kds", kdsRoutes);
-// app.use("/api/v1/customer/dine-in", customerDineInRoutes);
+app.use("/api/v1/customer/dine-in", customerDineInRoutes);
 app.use("/api/v1/dashboard", dashboardRouters);
 app.use("/api/v1/payment", paymentRoutes);
+app.use("/api/v1/table", tableRouters);
 app.use("/api/v1/rbac", rbacRoutes);
 
 // API routes - V2
@@ -189,7 +191,7 @@ process.on("unhandledRejection", (err) => {
     } catch (error) {
       logger.error(
         "Error closing connections during unhandled rejection:",
-        error
+        error,
       );
       process.exit(1);
     }

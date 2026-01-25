@@ -14,7 +14,7 @@ const {
   ORDER_STATUS,
   PAYMENT_STATUS,
   TRANSACTION_STATUS,
-  HTTP_STATUS
+  HTTP_STATUS,
 } = require("../../utils/const");
 const { notifyOrderUpdate } = require("../../services/realtimeService");
 
@@ -103,7 +103,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
           "safeModifiers ",
           safeModifiers,
           orderItem.modifiers,
-          orderItem
+          orderItem,
         );
 
         // Return processed item
@@ -114,6 +114,8 @@ const createOrder = asyncHandler(async (req, res, next) => {
           discountPrice,
           quantity,
           modifiers: safeModifiers,
+          itemNote: orderItem.itemNote || "",
+          itemDiscount: orderItem.itemDiscount || { amount: 0 },
         };
       })
       .filter(Boolean); // Remove null items
@@ -132,7 +134,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
     const taxes = await Tax.find({ _id: { $in: taxIds } });
     const taxBreakdown = taxes.map((taxDoc) => {
       const charge = parseFloat(
-        ((subtotal * taxDoc.percentage) / 100).toFixed(2)
+        ((subtotal * taxDoc.percentage) / 100).toFixed(2),
       );
       taxCharge += charge;
 
@@ -179,7 +181,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
         delivery +
         deliveryTip -
         discountCharge
-      ).toFixed(2)
+      ).toFixed(2),
     );
 
     // Create order object
@@ -251,7 +253,7 @@ const getAllOrders = asyncHandler(async (req, res, next) => {
         field: "orderType",
         model: OrderType,
         select: `orderType ${getQueryParams(
-          req.queryOptions?.select?.orderType
+          req.queryOptions?.select?.orderType,
         )}`,
       },
       {
@@ -263,7 +265,7 @@ const getAllOrders = asyncHandler(async (req, res, next) => {
         field: "tax.taxes.taxId",
         model: Tax,
         select: `name percentage ${getQueryParams(
-          req.queryOptions?.select?.tax
+          req.queryOptions?.select?.tax,
         )}`,
       },
       {
@@ -369,7 +371,7 @@ const updateById = asyncHandler(async (req, res, next) => {
   }).populate([
     { path: "orderItems.item" },
     { path: "tax.taxes.taxId" },
-    { path: "discount.discounts.discountId" }
+    { path: "discount.discounts.discountId" },
   ]);
 
   if (!updatedOrder) {
@@ -449,7 +451,7 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         status: "error",
         message: `Invalid payment method. Allowed: ${validPaymentMethods.join(
-          ", "
+          ", ",
         )}`,
       });
     }
@@ -511,6 +513,8 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
         quantity,
         price,
         specialInstructions: orderItem.specialInstructions || "",
+        itemNote: orderItem.itemNote || "",
+        itemDiscount: orderItem.itemDiscount || { amount: 0 },
         modifiers: orderItem.modifiers || [],
       });
     }
@@ -534,7 +538,7 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
 
       for (const taxDoc of taxes) {
         const charge = parseFloat(
-          ((subtotal * taxDoc.percentage) / 100).toFixed(2)
+          ((subtotal * taxDoc.percentage) / 100).toFixed(2),
         );
         taxCharge += charge;
 
@@ -560,7 +564,7 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
           amount = parseFloat(discountDoc.value);
         } else if (discountDoc.type === "percentage") {
           amount = parseFloat(
-            ((discountDoc.value * subtotal) / 100).toFixed(2)
+            ((discountDoc.value * subtotal) / 100).toFixed(2),
           );
         }
 
@@ -592,7 +596,7 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
         delivery +
         deliveryTip -
         discountCharge
-      ).toFixed(2)
+      ).toFixed(2),
     );
 
     // Validate final charge is positive
@@ -638,7 +642,7 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
       orderFinalCharge,
       totalItemCount: processedOrderItems.reduce(
         (sum, item) => sum + item.quantity,
-        0
+        0,
       ),
       payment: {
         history: [paymentEntry],

@@ -147,13 +147,14 @@ const currentMenu = asyncHandler(async (req, res, next) => {
     // Performance optimizations for large data sets
     const menus = await Menu.find(menuQuery)
       .select(
-        "-availableDays -taxes -discounts -metaData -createdAt -updatedAt -__v"
+        "-availableDays -taxes -discounts -metaData -createdAt -updatedAt -__v",
       )
       .lean()
       .populate({
         path: "categories",
         model: Category,
-        select: "name description isActive displayOrder categoryImage _id",
+        select:
+          "name description isActive displayOrder categoryImage color _id",
         match: { isActive: true },
         options: { sort: { displayOrder: 1 } },
       })
@@ -170,7 +171,7 @@ const currentMenu = asyncHandler(async (req, res, next) => {
           {
             path: "category",
             model: Category,
-            select: "_id",
+            select: "_id color",
           },
           {
             path: "taxRate",
@@ -209,7 +210,7 @@ const currentMenu = asyncHandler(async (req, res, next) => {
           let adjustedPrice = basePrice;
           if (Array.isArray(item.specialEventPricing)) {
             const specialEvent = item.specialEventPricing.find(
-              (event) => event && event.date === date
+              (event) => event && event.date === date,
             );
 
             if (
@@ -251,7 +252,7 @@ const currentMenu = asyncHandler(async (req, res, next) => {
     return res.status(200).json(updatedMenus);
   } catch (error) {
     next(
-      createError(500, "Error fetching Current Menu", { error: error.message })
+      createError(500, "Error fetching Current Menu", { error: error.message }),
     );
   }
 });
@@ -336,7 +337,7 @@ const updateMenu = async (req, res, next) => {
           { "mp._id": membershipPricingId },
           { "se._id": specialEventPricingId },
         ],
-      }
+      },
     );
 
     if (!updatedDocument) {
@@ -383,7 +384,7 @@ const addItemToMenu = asyncHandler(async (req, res, next) => {
         },
       },
     },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
 
   if (!updatedMenu) {

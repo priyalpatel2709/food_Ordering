@@ -77,9 +77,12 @@ const authUser = asyncHandler(async (req, res) => {
     .lean();
 
   // Validate user credentials
-  // if (!user || !(await user.matchPassword(password))) {
-  //   throw createError(401, "Invalid email or password");
-  // }
+  if (
+    !user
+    // || !(await user.matchPassword(password))
+  ) {
+    throw createError(401, "Invalid email or password");
+  }
 
   // Return user info and generated token
   res.json({ ...user, token: generateToken(user._id, user.restaurantId) });
@@ -124,7 +127,7 @@ const getUsersByRestaurantId = asyncHandler(async (req, res, next) => {
       password: 0,
       refreshToken: 0,
       __v: 0,
-    }
+    },
   )
     .populate({
       path: "roles",
