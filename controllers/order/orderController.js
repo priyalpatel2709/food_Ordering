@@ -50,6 +50,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
     // Initialize values
     let subtotal = 0;
+    let preparationTimeEstimate = 0;
     const invalidItems = [];
 
     // Process order items
@@ -73,6 +74,9 @@ const createOrder = asyncHandler(async (req, res, next) => {
         // Add to subtotal
         subtotal += price * quantity;
 
+        // Add item preparation time estimate (multiplied by quantity if needed)
+        preparationTimeEstimate += item?.preparationTime * quantity;
+        
         // Return processed item
         return {
           ...orderItem,
@@ -164,6 +168,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
       },
       discountCharge,
       orderFinalCharge,
+      preparationTimeEstimate,
     };
 
     // Create and save order

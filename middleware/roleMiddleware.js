@@ -10,7 +10,7 @@ const allowedRoles = (roles) => {
       });
     }
 
-    console.log("File: roleMiddleware.js", "Line 13:", roles);
+    // console.log("File: roleMiddleware.js", "Line 13:", roles);
 
     if (roles.includes(userRole) || userRole === "admin") {
       next();
@@ -33,8 +33,6 @@ const adminOnly = (req, res, next) => {
       message: "Authentication required",
     });
   }
-
-  console.log("File: roleMiddleware.js", "Line 35:", userRole);
 
   if (
     userRole === "admin" &&
