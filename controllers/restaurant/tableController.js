@@ -36,7 +36,7 @@ const createTable = asyncHandler(async (req, res, next) => {
 
   const newTable = new Table({
     ...req.body,
-    restaurantId: `restaurant_${req.restaurantId}`,
+    // restaurantId: `restaurant_${req.restaurantId}`,
   });
 
   const savedTable = await newTable.save();

@@ -4,7 +4,7 @@ const tableSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: String,
-      required: true,
+      // required: true,
     },
     tableNumber: { type: String, required: true },
     seatingCapacity: { type: Number, default: 2 },
