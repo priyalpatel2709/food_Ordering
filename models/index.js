@@ -12,6 +12,7 @@ const {
   getRestaurantModel,
   getTaxModel,
   getTableModel,
+  getWasteLogModel,
 } = require("./restaurant/index");
 
 const {
@@ -37,4 +38,5 @@ module.exports = {
   getRoleModel,
   getPermissionModel,
   getTableModel,
+  getWasteLogModel,
 };

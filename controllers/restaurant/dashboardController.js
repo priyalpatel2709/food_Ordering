@@ -25,7 +25,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   }
 
   const matchStage = {
-    restaurantId,
     orderStatus: { $ne: ORDER_STATUS.CANCELED }, // Exclude canceled from revenue stats (unless handled separately)
     ...dateFilter,
   };
@@ -245,25 +244,132 @@ const getDashboardStats = asyncHandler(async (req, res) => {
             },
           },
         ],
+        // 11. Sales by Category (New)
+        categorySales: [
+          { $unwind: "$orderItems" },
+          {
+            $lookup: {
+              from: "items",
+              localField: "orderItems.item",
+              foreignField: "_id",
+              as: "itemDoc",
+            },
+          },
+          { $unwind: "$itemDoc" },
+          {
+            $lookup: {
+              from: "categories",
+              localField: "itemDoc.category",
+              foreignField: "_id",
+              as: "categoryDoc",
+            },
+          },
+          {
+            $unwind: { path: "$categoryDoc", preserveNullAndEmptyArrays: true },
+          },
+          {
+            $group: {
+              _id: {
+                $ifNull: ["$categoryDoc.name", "Uncategorized"],
+              },
+              revenue: {
+                $sum: {
+                  $multiply: ["$orderItems.price", "$orderItems.quantity"],
+                },
+              },
+              quantitySold: { $sum: "$orderItems.quantity" },
+            },
+          },
+          { $sort: { revenue: -1 } },
+        ],
+        // 12. Discount Analysis (New)
+        discountAnalysis: [
+          { $unwind: "$discount.discounts" },
+          {
+            $lookup: {
+              from: "discounts",
+              localField: "discount.discounts.discountId",
+              foreignField: "_id",
+              as: "discountDoc",
+            },
+          },
+          { $unwind: "$discountDoc" },
+          {
+            $group: {
+              _id: "$discountDoc.discountName",
+              totalDiscount: { $sum: "$discount.discounts.discountAmount" },
+              usageCount: { $sum: 1 },
+            },
+          },
+          { $sort: { totalDiscount: -1 } },
+        ],
+        // 13. Table Performance (New)
+        tablePerformance: [
+          { $match: { tableNumber: { $exists: true, $ne: null } } },
+          {
+            $group: {
+              _id: "$tableNumber",
+              revenue: { $sum: "$orderFinalCharge" },
+              orders: { $sum: 1 },
+              avgOrderValue: { $avg: "$orderFinalCharge" },
+            },
+          },
+          { $sort: { revenue: -1 } },
+        ],
+        // 14. Tax Breakdown (New)
+        taxBreakdown: [
+          { $unwind: "$tax.taxes" },
+          {
+            $lookup: {
+              from: "taxes",
+              localField: "tax.taxes.taxId",
+              foreignField: "_id",
+              as: "taxDoc",
+            },
+          },
+          { $unwind: "$taxDoc" },
+          {
+            $group: {
+              _id: "$taxDoc.name",
+              totalCollected: { $sum: "$tax.taxes.taxCharge" },
+            },
+          },
+        ],
       },
     },
   ]);
 
-  // 2. Parallel Aggregation for CANCELED orders (Lost Revenue)
-  // We do this separately because the main pipeline excludes CANCELED orders to sanitize revenue figures
+  // 2. Parallel Aggregation for Voids/Lost Revenue (Enhanced)
   const lostRevenuePromise = Order.aggregate([
     {
       $match: {
-        restaurantId,
         orderStatus: ORDER_STATUS.CANCELED,
         ...dateFilter,
       },
     },
     {
-      $group: {
-        _id: null,
-        lostRevenue: { $sum: "$orderFinalCharge" }, // Potential revenue lost
-        count: { $sum: 1 },
+      $facet: {
+        summary: [
+          {
+            $group: {
+              _id: null,
+              lostRevenue: { $sum: "$orderFinalCharge" },
+              count: { $sum: 1 },
+            },
+          },
+        ],
+        voidReasons: [
+          { $unwind: { path: "$statusHistory", preserveNullAndEmptyArrays: true } },
+          { $match: { "statusHistory.status": ORDER_STATUS.CANCELED } },
+          {
+            $group: {
+              _id: "$statusHistory.updatedBy",
+              lostRevenue: { $sum: "$orderFinalCharge" },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { lostRevenue: -1 } },
+        ],
       },
     },
   ]);
@@ -274,7 +380,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     lostRevenuePromise,
   ]);
   const result = reportData[0];
-  const lostStats = lostRevenueData[0] || { lostRevenue: 0, count: 0 };
+  const lostFacet = lostRevenueData[0] || { summary: [], voidReasons: [] };
+  const lostStats = lostFacet.summary[0] || { lostRevenue: 0, count: 0 };
 
   // Format Response
   res.status(HTTP_STATUS.OK).json({
@@ -288,9 +395,14 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       salesChart: result.salesTrend,
       refundsChart: result.refundsTrend,
       topItems: result.topItems,
+      taxStats: result.taxBreakdown,
       paymentStats: result.paymentAnalysis,
       staffPerformance: result.staffPerformance,
       topCustomers: result.topCustomers,
+      categorySales: result.categorySales,
+      discountStats: result.discountAnalysis,
+      tableStats: result.tablePerformance,
+      voidStats: lostFacet.voidReasons,
       distribution: result.orderDistribution.map((d) => ({
         source: d._id.source,
         isDelivery: d._id.type,
@@ -425,7 +537,6 @@ const getDayByDayReport = asyncHandler(async (req, res) => {
   const report = await Order.aggregate([
     {
       $match: {
-        restaurantId,
         orderStatus: ORDER_STATUS.COMPLETED,
         ...dateFilter,
       },

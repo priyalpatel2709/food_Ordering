@@ -6,6 +6,7 @@ const {
   taxRouters,
   dashboardRouters,
   tableRouters,
+  wasteRouters,
 } = require("./restaurant/index");
 
 const {
@@ -44,4 +45,5 @@ module.exports = {
   rbacRoutes,
   tableRouters,
   customerDineInRoutes,
+  wasteRouters,
 };

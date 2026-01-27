@@ -50,6 +50,7 @@ const {
   dashboardRouters,
   rbacRoutes,
   tableRouters,
+  wasteRouters,
 } = require("./routes");
 
 const app = express();
@@ -117,6 +118,7 @@ app.use("/api/v1/dashboard", dashboardRouters);
 app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1/table", tableRouters);
 app.use("/api/v1/rbac", rbacRoutes);
+app.use("/api/v1/waste", wasteRouters);
 
 // API routes - V2
 app.use("/api/v2/menu", menuRouteV2);
