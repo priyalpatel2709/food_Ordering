@@ -109,7 +109,7 @@ const updateOrderItemStatus = asyncHandler(async (req, res) => {
 
   // Find item and update
   const itemIndex = order.orderItems.findIndex(
-    (i) => (i._id && i._id.toString() === itemId) || i.id === itemId
+    (i) => (i._id && i._id.toString() === itemId) || i.id === itemId,
   );
 
   if (itemIndex === -1) {
@@ -162,19 +162,42 @@ const updateOrderItemStatus = asyncHandler(async (req, res) => {
 
   order.kdsStatus = newKdsStatus;
 
-  // Sync with main Order Status if ALL items are READY
-  const isAllReady = statusIndices.every(
-    (idx) => idx === workflow.indexOf("ready") || workflow[idx] === "served"
-  );
+  // Sync with main Order Status
+  const readyIndex = workflow.indexOf("ready");
+  const startIndex = workflow.indexOf("start") !== -1 ? workflow.indexOf("start") : workflow.indexOf("preparing");
+
+  const isAllReady = statusIndices.every((idx) => {
+    if (readyIndex !== -1 && idx >= readyIndex) return true;
+    if (workflow[idx] === "ready" || workflow[idx] === "served") return true;
+    return false;
+  });
+
+  const isPreparing = statusIndices.some((idx) => {
+    if (startIndex !== -1 && idx >= startIndex) return true;
+    return false;
+  });
+
   if (
     isAllReady &&
     order.orderStatus !== ORDER_STATUS.READY &&
     order.orderStatus !== ORDER_STATUS.SERVED
   ) {
-    // Create notification/log if needed
     order.orderStatus = ORDER_STATUS.READY;
     order.statusHistory.push({
       status: ORDER_STATUS.READY,
+      timestamp: new Date(),
+      updatedBy: "KDS System",
+    });
+  } else if (
+    isPreparing &&
+    !isAllReady &&
+    order.orderStatus !== ORDER_STATUS.PREPARING &&
+    order.orderStatus !== ORDER_STATUS.READY &&
+    order.orderStatus !== ORDER_STATUS.SERVED
+  ) {
+    order.orderStatus = ORDER_STATUS.PREPARING;
+    order.statusHistory.push({
+      status: ORDER_STATUS.PREPARING,
       timestamp: new Date(),
       updatedBy: "KDS System",
     });

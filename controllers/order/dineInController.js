@@ -373,9 +373,9 @@ const addItemsToOrder = asyncHandler(async (req, res) => {
   await recalculateOrderTotals(order, req.restaurantDb);
 
   // Update status to CONFIRMED or ONGOING if it was PENDING?
-  if (order.orderStatus === ORDER_STATUS.PENDING) {
-    order.orderStatus = ORDER_STATUS.CONFIRMED; // Now it has items and is "live"
-  }
+  // if (order.orderStatus === ORDER_STATUS.PENDING) {
+  //   order.orderStatus = ORDER_STATUS.CONFIRMED; // Now it has items and is "live"
+  // }
 
   // Reset KDS Status because new items are added
   // If we have mixed items, the KDS logic (min status) implies "new" or "started"

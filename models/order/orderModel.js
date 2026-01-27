@@ -27,6 +27,7 @@ const orderSchema = new mongoose.Schema(
     orderType: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "OrderType",
+      // required: true,
     },
     restaurantTipCharge: { type: Number, min: 0, default: 0 },
     isScheduledOrder: { type: Boolean, default: false },
