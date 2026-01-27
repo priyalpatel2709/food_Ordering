@@ -24,7 +24,7 @@ const {
   createOrderWithPayment,
   // getOrderDetails,
   // updateOrderStatus,
-  // cancelOrder,
+  cancelOrder,
   // trackOrder
 } = require("../../controllers/order/orderController");
 
@@ -64,6 +64,14 @@ router.post(
   protect,
   authorize(PERMISSIONS.ORDER_CREATE),
   createDineInOrder
+);
+
+router.post(
+  "/cancel/:orderId",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_DELETE),
+  cancelOrder
 );
 router.put(
   "/dine-in/:orderId/items",

@@ -705,6 +705,64 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
   }
 });
 
+const cancelOrder = asyncHandler(async (req, res) => {
+  try {
+    const Order = getOrderModel(req.restaurantDb);
+    const order = await Order.findById(req.params.orderId);
+
+    if (!order) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
+        status: "error",
+        message: "Order not found",
+      });
+    }
+
+    // Check if order can be cancelled
+    // const cancellableStatuses = [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED];
+    // if (!cancellableStatuses.includes(order.orderStatus)) {
+    //   return res.status(HTTP_STATUS.BAD_REQUEST).json({
+    //     status: "error",
+    //     message: "Order cannot be cancelled at this stage",
+    //   });
+    // }
+
+    order.orderStatus = ORDER_STATUS.CANCELED;
+    order.statusHistory.push({
+      status: ORDER_STATUS.CANCELED,
+      timestamp: new Date(),
+      updatedBy: req.user.name || req.user.email,
+    });
+
+    await order.save();
+
+    logger.info("Order cancelled", {
+      orderId: order.orderId,
+      cancelledBy: req.user._id,
+    });
+
+    res.status(HTTP_STATUS.OK).json({
+      status: "success",
+      message: "Order cancelled successfully",
+      data: {
+        order,
+      },
+    });
+  } catch (error) {
+    logger.error("Error cancelling order:", {
+      error: error.message,
+      orderId: req.params.orderId,
+    });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: "Error cancelling order",
+      error:
+        process.env.NODE_ENV === "production"
+          ? "Internal server error"
+          : error.message,
+    });
+  }
+});
+
 module.exports = {
   createOrder,
   getAllOrders,
@@ -714,4 +772,5 @@ module.exports = {
   deleteAll,
   getUserOrders,
   createOrderWithPayment,
+  cancelOrder
 };
