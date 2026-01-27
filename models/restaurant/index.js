@@ -3,6 +3,7 @@ const getRestaurantModel = require("./restaurantModel");
 const getTaxModel = require("./taxModel");
 const getTableModel = require("./tableModel");
 const getWasteLogModel = require("./wasteLogModel");
+const getCustomerLoyaltyModel = require("./customerLoyaltyModel");
 
 module.exports = {
   getDiscountModel,
@@ -10,4 +11,5 @@ module.exports = {
   getTaxModel,
   getTableModel,
   getWasteLogModel,
+  getCustomerLoyaltyModel,
 };

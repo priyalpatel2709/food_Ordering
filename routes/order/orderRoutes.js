@@ -31,6 +31,7 @@ const {
 const {
   getTablesStatus,
   createDineInOrder,
+  lookupCustomer,
   addItemsToOrder,
   completeDineInCheckout,
   removeDineInOrder,
@@ -56,6 +57,15 @@ const {
 // router.post("/dine-in/group/:orderId/add", identifyTenant, protect, addItemToGroupCart);
 // router.patch("/dine-in/group/:orderId/item/:itemId", identifyTenant, protect, updateGroupCartItem);
 // router.post("/dine-in/group/:orderId/submit", identifyTenant, protect, submitGroupOrder);
+
+// Customer Loyalty Lookup
+router.get(
+  "/lookup-customer/:identifier",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_READ),
+  lookupCustomer
+);
 
 // Dine-In Routes
 router.get(

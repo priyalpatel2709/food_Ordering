@@ -21,6 +21,11 @@ const {
   emitTableStatusUpdate,
 } = require("../../services/realtimeService");
 
+const {
+  getCustomerLoyaltyInfo,
+} = require("../../middleware/loyaltyMiddleware");
+const { awardLoyaltyPoints } = require("../../middleware/loyaltyMiddleware");
+
 // Helper to recalculate order totals
 const recalculateOrderTotals = async (order, restaurantDb) => {
   const Item = getItemModel(restaurantDb);
@@ -207,7 +212,13 @@ const getTablesStatus = asyncHandler(async (req, res) => {
 
 // 2. Create Dine-In Order (Open Table)
 const createDineInOrder = asyncHandler(async (req, res) => {
-  const { tableNumber, items = [], isScheduledOrder, scheduledTime } = req.body;
+  const {
+    tableNumber,
+    items = [],
+    isScheduledOrder,
+    scheduledTime,
+    customerId,
+  } = req.body;
 
   if (!tableNumber) {
     return res
@@ -293,7 +304,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
   }
 
   const orderData = {
-    customerId: req.user._id,
+    customerId: customerId,
     tableId: table._id,
     tableNumber: tableNumber.toString(),
     serverName: req.user.name,
@@ -336,6 +347,29 @@ const createDineInOrder = asyncHandler(async (req, res) => {
     orderId: savedOrder._id,
     amount: savedOrder.orderFinalCharge,
     customerName: savedOrder.contactName || savedOrder.serverName,
+  });
+});
+
+// 2.5 Lookup Customer Loyalty Info (for POS display)
+const lookupCustomer = asyncHandler(async (req, res) => {
+  const { identifier } = req.params; // phone, email, or customer ID
+
+  const customerInfo = await getCustomerLoyaltyInfo(
+    identifier,
+    req.restaurantDb,
+    req.restaurantId,
+  );
+
+  if (!customerInfo) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
+      status: "error",
+      message: "Customer not found",
+    });
+  }
+
+  res.status(HTTP_STATUS.OK).json({
+    status: "success",
+    data: customerInfo,
   });
 });
 
@@ -532,6 +566,19 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
 
   const saved = await order.save();
 
+  console.log("saved.orderStatus ", saved.orderStatus);
+  console.log("saved", saved);
+
+  // Award loyalty points if order is completed
+  // if (saved.orderStatus === ORDER_STATUS.COMPLETED) {
+  if (true) {
+    try {
+      await awardLoyaltyPoints(saved, req.restaurantDb);
+    } catch (error) {
+      console.error("Error awarding loyalty points:", error);
+    }
+  }
+
   res.status(HTTP_STATUS.OK).json({
     status: "success",
     data: saved,
@@ -697,6 +744,7 @@ const removeOrderItem = asyncHandler(async (req, res) => {
 module.exports = {
   getTablesStatus,
   createDineInOrder,
+  lookupCustomer,
   addItemsToOrder,
   completeDineInCheckout,
   removeDineInOrder,
