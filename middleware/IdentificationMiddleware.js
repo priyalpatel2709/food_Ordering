@@ -1,6 +1,7 @@
 const { connectToDatabase } = require("../config/db");
 const { DEFAULTS } = require("../utils/const");
 const { logger } = require("./loggingMiddleware");
+const { startSchedulerForRestaurant } = require("../services/schedulerService");
 
 /**
  * Identify tenant (restaurant) and establish database connections
@@ -44,6 +45,10 @@ const identifyTenant = async (req, res, next) => {
     // Connect to the specified restaurant database if restaurantId is not "Users"
     if (restaurantId !== DEFAULTS.RESTAURANT_ID) {
       req.restaurantDb = await connectToDatabase(restaurantId);
+
+      // Start scheduler for this restaurant (if not already running)
+      // This ensures scheduled orders are processed automatically
+      startSchedulerForRestaurant(req.restaurantDb, restaurantId);
     }
 
     // Store restaurantId in request for later use

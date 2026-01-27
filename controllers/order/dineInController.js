@@ -207,12 +207,30 @@ const getTablesStatus = asyncHandler(async (req, res) => {
 
 // 2. Create Dine-In Order (Open Table)
 const createDineInOrder = asyncHandler(async (req, res) => {
-  const { tableNumber, items = [] } = req.body;
+  const { tableNumber, items = [], isScheduledOrder, scheduledTime } = req.body;
 
   if (!tableNumber) {
     return res
       .status(HTTP_STATUS.BAD_REQUEST)
       .json({ status: "error", message: "Table number is required" });
+  }
+
+  // Validate scheduled order fields
+  if (isScheduledOrder) {
+    if (!scheduledTime) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        status: "error",
+        message: "scheduledTime is required for scheduled orders",
+      });
+    }
+
+    const scheduledDate = new Date(scheduledTime);
+    if (scheduledDate <= new Date()) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        status: "error",
+        message: "Scheduled time must be in the future",
+      });
+    }
   }
 
   const Order = getOrderModel(req.restaurantDb);
@@ -274,7 +292,7 @@ const createDineInOrder = asyncHandler(async (req, res) => {
     }
   }
 
-  const newOrder = new Order({
+  const orderData = {
     customerId: req.user._id,
     tableId: table._id,
     tableNumber: tableNumber.toString(),
@@ -284,8 +302,16 @@ const createDineInOrder = asyncHandler(async (req, res) => {
     subtotal,
     orderFinalCharge: subtotal,
     orderStatus: ORDER_STATUS.PENDING,
-  });
+  };
 
+  // Add scheduled order fields if applicable
+  if (isScheduledOrder) {
+    orderData.isScheduledOrder = true;
+    orderData.scheduledTime = new Date(scheduledTime);
+    orderData.scheduledOrderStatus = "pending";
+  }
+
+  const newOrder = new Order(orderData);
   const savedOrder = await newOrder.save();
 
   // Update Table Status

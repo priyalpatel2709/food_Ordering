@@ -1,14 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const { identifyTenant } = require("../../middleware/tenantMiddleware");
-const { protect, authorize } = require("../../middleware/authMiddleware");
+
+const {
+  protect,
+  authorize,
+  identifyTenant,
+} = require("../../middleware/index");
 const { PERMISSIONS } = require("../../utils/permissions");
 
 const {
-    logWaste,
-    getWasteLogs,
-    getWasteStats,
-    deleteWasteLog,
+  logWaste,
+  getWasteLogs,
+  getWasteStats,
+  deleteWasteLog,
 } = require("../../controllers/restaurant/wasteController");
 
 // All routes require authentication and tenant identification

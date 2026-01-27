@@ -8,13 +8,41 @@ const { ORDER_STATUS } = require("../../utils/const");
 
 /**
  * Get active KDS orders (not completed/served/canceled)
+ * Excludes scheduled orders that haven't reached their scheduled time yet
  */
 const getKDSOrders = asyncHandler(async (req, res) => {
   const Order = getOrderModel(req.restaurantDb);
   const Item = getItemModel(req.restaurantDb);
 
   try {
-    const orders = await Order.find({})
+    // Build filter to exclude:
+    // 1. Scheduled orders that are still pending (not yet sent to KDS)
+    // 2. Completed, served, or canceled orders (optional - can be controlled by query param)
+    const filter = {
+      $or: [
+        // Regular orders (not scheduled)
+        { isScheduledOrder: { $ne: true } },
+        // Scheduled orders that have been sent to KDS
+        {
+          isScheduledOrder: true,
+          scheduledOrderStatus: "sent_to_kds",
+        },
+      ],
+    };
+
+    // Optional: Filter by order status (show only active orders)
+    // Query param: ?activeOnly=true
+    if (req.query.activeOnly !== "false") {
+      filter.orderStatus = {
+        $nin: [
+          ORDER_STATUS.COMPLETED,
+          ORDER_STATUS.SERVED,
+          ORDER_STATUS.CANCELED,
+        ],
+      };
+    }
+
+    const orders = await Order.find(filter)
       .sort({ createdAt: 1 }) // FIFO
       .populate({
         path: "orderItems.item",

@@ -44,6 +44,13 @@ const {
   submitGroupOrder,
 } = require("../../controllers/order/groupOrderController");
 
+const {
+  getScheduledOrders,
+  updateScheduledOrder,
+  manualTriggerScheduled,
+  cancelScheduledOrder,
+} = require("../../controllers/order/scheduledOrderController");
+
 // Group Ordering Routes
 // router.get("/dine-in/group/join", identifyTenant, protect, joinGroupSession);
 // router.post("/dine-in/group/:orderId/add", identifyTenant, protect, addItemToGroupCart);
@@ -101,6 +108,39 @@ router.delete(
   protect,
   authorize(PERMISSIONS.ORDER_DELETE),
   removeDineInOrder
+);
+
+// Scheduled Order Routes
+router.get(
+  "/scheduled",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_READ),
+  getScheduledOrders
+);
+
+router.put(
+  "/scheduled/:orderId",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_UPDATE),
+  updateScheduledOrder
+);
+
+router.post(
+  "/scheduled/trigger",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_UPDATE),
+  manualTriggerScheduled
+);
+
+router.delete(
+  "/scheduled/:orderId",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_DELETE),
+  cancelScheduledOrder
 );
 
 router.get("/my-orders", identifyTenant, protect, getUserOrders);

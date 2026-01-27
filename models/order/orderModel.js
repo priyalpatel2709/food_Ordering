@@ -32,6 +32,11 @@ const orderSchema = new mongoose.Schema(
     restaurantTipCharge: { type: Number, min: 0, default: 0 },
     isScheduledOrder: { type: Boolean, default: false },
     scheduledTime: { type: Date }, // Added for scheduled orders
+    scheduledOrderStatus: {
+      type: String,
+      enum: ["pending", "sent_to_kds", "failed"],
+      default: "pending",
+    }, // Track if scheduled order was sent to KDS
     isDeliveryOrder: { type: Boolean, default: false },
     deliveryAddress: {
       // Added structured address for delivery

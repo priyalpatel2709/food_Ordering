@@ -217,11 +217,17 @@ const emitTableStatusUpdate = (restaurantId, tableNumber, statusData) => {
     });
 };
 
+/**
+ * Get Socket.io instance
+ */
+const getIO = () => io;
+
 module.exports = {
     initSocket,
     closeAllStreams,
     notifyOrderUpdate,
     emitTableStatusUpdate,
+    getIO,
     // Keep legacy exports for compatibility during refactor
     emitGroupCartUpdate: (r, t, c) => notifyOrderUpdate(r, t, c),
     emitTableOrderUpdate: (r, t, o) => notifyOrderUpdate(r, t, o)

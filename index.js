@@ -31,6 +31,9 @@ const {
 const { closeAllConnections, getConnectionCount } = require("./config/db");
 const { DEFAULTS } = require("./utils/const");
 const { initSocket, closeAllStreams } = require("./services/realtimeService");
+const {
+  stopAllSchedulers,
+} = require("./services/schedulerService");
 
 const {
   userRouters,
@@ -138,6 +141,10 @@ const server = app.listen(PORT, () => {
 // Initialize Realtime Service (Socket.io + Change Streams)
 initSocket(server);
 
+// Note: Scheduler will be started automatically when restaurants connect
+// via the tenant middleware or when orders are created
+logger.info("Scheduled order processing service initialized");
+
 // Graceful shutdown handler
 const gracefulShutdown = async (signal) => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
@@ -149,6 +156,8 @@ const gracefulShutdown = async (signal) => {
     console.log("✅ HTTP server closed".green);
 
     try {
+      // Stop all schedulers
+      stopAllSchedulers();
       // Close all database connections
       await closeAllConnections();
       // Close all active change streams
