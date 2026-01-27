@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const createError = require("http-errors");
-
+const mongoose = require("mongoose");
 const { getMenuModel } = require("../../../models/index");
 
 const { format } = require("date-fns");
@@ -8,6 +8,8 @@ const { format } = require("date-fns");
 const currentMenu = asyncHandler(async (req, res, next) => {
   try {
     const { restaurantDb } = req;
+    const { menuId } = req.query;
+
     if (!restaurantDb) {
       return res.status(400).json({
         success: false,
@@ -22,18 +24,28 @@ const currentMenu = asyncHandler(async (req, res, next) => {
     const currentTime = format(now, "HH:mm"); // e.g., "12:40"
     const currentDate = format(now, "yyyy/MM/dd"); // e.g., "2025/04/25"
 
+    const matchStage = {
+      isActive: true,
+    };
+
+    // If menuId is provided → filter by menuId only
+    if (menuId) {
+      matchStage._id = new mongoose.Types.ObjectId(menuId);
+    }
+    // Else → filter by availability
+    else {
+      matchStage["availableDays.day"] = currentDay;
+      matchStage["availableDays.timeSlots"] = {
+        $elemMatch: {
+          openTime: { $lte: currentTime },
+          closeTime: { $gt: currentTime },
+        },
+      };
+    }
+
     const menus = await Menu.aggregate([
       {
-        $match: {
-          isActive: true,
-          "availableDays.day": currentDay,
-          "availableDays.timeSlots": {
-            $elemMatch: {
-              openTime: { $lte: currentTime },
-              closeTime: { $gt: currentTime },
-            },
-          },
-        },
+        $match: matchStage,
       },
       {
         $lookup: {
@@ -216,7 +228,7 @@ const currentMenu = asyncHandler(async (req, res, next) => {
     next(
       createError(500, "Error fetching Current Menu", {
         error: error.message,
-      })
+      }),
     );
   }
 });
