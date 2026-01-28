@@ -31,20 +31,23 @@ const schemas = {
       .max(30)
       .pattern(
         new RegExp(
-          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,30}$"
-        )
+          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,30}$",
+        ),
       )
       .messages({
-        'string.pattern.base': 'Password must be 6-30 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
-        'string.min': 'Password must be at least 6 characters long',
-        'string.max': 'Password must not exceed 30 characters',
-        'any.required': 'Password is required'
+        "string.pattern.base":
+          "Password must be 6-30 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
+        "string.min": "Password must be at least 6 characters long",
+        "string.max": "Password must not exceed 30 characters",
+        "any.required": "Password is required",
       }),
     phone: Joi.string()
       .pattern(new RegExp("^[0-9]{10}$"))
       .message("Phone number must be 10 digits"),
     address: Joi.string().required().min(5),
-    gender: Joi.string().valid(...Object.values(GENDER)).optional(),
+    gender: Joi.string()
+      .valid(...Object.values(GENDER))
+      .optional(),
   }),
 
   // Restaurant validation schemas
@@ -78,9 +81,9 @@ const schemas = {
           Joi.object({
             name: Joi.string().required(),
             price: Joi.number().min(0),
-          })
+          }),
         ),
-      })
+      }),
     ),
   }),
 
@@ -108,7 +111,9 @@ const schemas = {
       state: Joi.string().required(),
       zipCode: Joi.string().required(),
       country: Joi.string().required(),
-      addressType: Joi.string().valid(...Object.values(ADDRESS_TYPES)).optional(),
+      addressType: Joi.string()
+        .valid(...Object.values(ADDRESS_TYPES))
+        .optional(),
       coordinates: Joi.object({
         lat: Joi.number().required(),
         lng: Joi.number().required(),
@@ -134,10 +139,10 @@ const schemas = {
               Joi.object({
                 name: Joi.string().required(),
                 price: Joi.number().min(0).optional(),
-              })
+              }),
             )
             .optional(),
-        })
+        }),
       )
       .min(1)
       .required(),
@@ -151,7 +156,7 @@ const schemas = {
   processPayment: Joi.object({
     amount: Joi.number().required().min(0),
     method: Joi.string().required(),
-    transactionId: Joi.string().required(),
+    transactionId: Joi.string().allow("", null),
     gateway: Joi.string().allow("", null),
     notes: Joi.string().allow("", null),
   }),
@@ -183,7 +188,9 @@ const schemas = {
       state: Joi.string().required(),
       zipCode: Joi.string().required(),
       country: Joi.string().required(),
-      addressType: Joi.string().valid(...Object.values(ADDRESS_TYPES)).optional(),
+      addressType: Joi.string()
+        .valid(...Object.values(ADDRESS_TYPES))
+        .optional(),
       coordinates: Joi.object({
         lat: Joi.number().required(),
         lng: Joi.number().required(),
@@ -214,10 +221,10 @@ const schemas = {
               Joi.object({
                 name: Joi.string().required(),
                 price: Joi.number().min(0).optional(),
-              })
+              }),
             )
             .optional(),
-        })
+        }),
       )
       .min(1)
       .required(),

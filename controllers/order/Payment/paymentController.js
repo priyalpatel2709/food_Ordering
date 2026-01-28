@@ -2,6 +2,12 @@ const asyncHandler = require("express-async-handler");
 const crudOperations = require("../../../utils/crudOperations");
 const { getOrderModel, getRefundModel } = require("../../../models/index");
 const { tr } = require("date-fns/locale");
+const {
+  PAYMENT_STATUS,
+  TRANSACTION_STATUS,
+  ORDER_STATUS,
+  PAYMENT_METHODS,
+} = require("../../../utils/const");
 
 const giveRefund = asyncHandler(async (req, res, next) => {
   try {
@@ -66,7 +72,7 @@ const giveRefund = asyncHandler(async (req, res, next) => {
       remainingCharge: remainingCharge - refundAmount,
     };
 
-    order.payment.paymentStatus = "refunded";
+    order.payment.paymentStatus = PAYMENT_STATUS.REFUNDED;
 
     await order.save();
 
@@ -110,7 +116,7 @@ const processPayment = asyncHandler(async (req, res, next) => {
 
     if (
       !method ||
-      !["credit", "debit", "cash", "online", "wallet", "upi"].includes(method)
+      !Object.values(PAYMENT_METHODS).includes(method)
     ) {
       return res.status(400).json({
         status: "error",
@@ -128,7 +134,7 @@ const processPayment = asyncHandler(async (req, res, next) => {
     const paymentEntry = {
       method,
       transactionId: transactionId || null,
-      status: "complete",
+      status: TRANSACTION_STATUS.COMPLETE,
       amount: Number(amount),
       processedAt: new Date(),
       processedBy: req.user?._id || null,
@@ -152,10 +158,12 @@ const processPayment = asyncHandler(async (req, res, next) => {
     );
 
     // Optionally update order status
-    if (order.payment.balanceDue === 0) {
-      order.payment.paymentStatus = "paid";
+    if (order.payment.balanceDue <= 0) {
+      order.payment.paymentStatus = PAYMENT_STATUS.PAID;
+      order.payment.balanceDue = 0; // Ensure no negative balance
+      order.orderStatus = ORDER_STATUS.CONFIRMED; // Or COMPLETED if that's the flow
     } else {
-      order.payment.paymentStatus = "partially_paid";
+      order.payment.paymentStatus = PAYMENT_STATUS.PARTIALLY_PAID;
     }
 
     await order.save();
@@ -272,9 +280,9 @@ const payForItem = asyncHandler(async (req, res) => {
   }
 
   const paymentEntry = {
-    method: method || "cash",
+    method: method || PAYMENT_METHODS.CASH,
     amount: Number(amount),
-    status: "complete",
+    status: TRANSACTION_STATUS.COMPLETE,
     processedAt: new Date(),
     processedBy: req.user?._id,
     notes: `Item-wise payment for ${itemIndex}`,
@@ -287,10 +295,11 @@ const payForItem = asyncHandler(async (req, res) => {
     0,
   );
 
-  if (order.payment.balanceDue === 0) {
-    order.payment.paymentStatus = "paid";
+  if (order.payment.balanceDue <= 0) {
+    order.payment.paymentStatus = PAYMENT_STATUS.PAID;
+    order.payment.balanceDue = 0;
   } else {
-    order.payment.paymentStatus = "partially_paid";
+    order.payment.paymentStatus = PAYMENT_STATUS.PARTIALLY_PAID;
   }
 
   await order.save();
