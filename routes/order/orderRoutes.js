@@ -34,6 +34,7 @@ const {
   lookupCustomer,
   addItemsToOrder,
   completeDineInCheckout,
+  applyLoyaltyDiscountToOrder,
   removeDineInOrder,
   removeOrderItem,
 } = require("../../controllers/order/dineInController");
@@ -103,6 +104,13 @@ router.post(
   protect,
   authorize(PERMISSIONS.ORDER_UPDATE),
   completeDineInCheckout
+);
+router.post(
+  "/dine-in/:orderId/apply-loyalty-discount",
+  identifyTenant,
+  protect,
+  authorize(PERMISSIONS.ORDER_UPDATE),
+  applyLoyaltyDiscountToOrder
 );
 
 router.delete(

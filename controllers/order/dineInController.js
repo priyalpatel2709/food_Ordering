@@ -23,6 +23,7 @@ const {
 
 const {
   getCustomerLoyaltyInfo,
+  applyLoyaltyDiscount,
 } = require("../../middleware/loyaltyMiddleware");
 const { awardLoyaltyPoints } = require("../../middleware/loyaltyMiddleware");
 
@@ -101,13 +102,23 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
     taxBreakdown.reduce((sum, t) => sum + t.taxCharge, 0).toFixed(2),
   );
 
-  // Discounts (Global Discounts Logic - applied to subtotal usually)
+  // Discounts (Global Discounts Logic)
+  // We handle both defined discounts (via discountId) and manual/loyalty discounts (where discountId is null)
   let discountCharge = 0;
   const discountBreakdown = [];
+
   if (order.discount && order.discount.discounts) {
-    const discountIds = order.discount.discounts.map((d) => d.discountId);
-    if (discountIds.length > 0) {
+    // 1. Extract discounts that have a physical ID to re-calculate (percentage-based might change)
+    const linkedDiscounts = order.discount.discounts.filter((d) => d.discountId);
+    const manualDiscounts = order.discount.discounts.filter(
+      (d) => !d.discountId,
+    );
+
+    // 2. Re-calculate linked discounts from the database
+    if (linkedDiscounts.length > 0) {
+      const discountIds = linkedDiscounts.map((d) => d.discountId);
       const discounts = await Discount.find({ _id: { $in: discountIds } });
+
       for (const discountDoc of discounts) {
         let amount = 0;
         if (discountDoc.type === "fixed") {
@@ -120,9 +131,16 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
         discountCharge += amount;
         discountBreakdown.push({
           discountId: discountDoc._id,
+          discountName: discountDoc.discountName,
           discountAmount: amount,
         });
       }
+    }
+
+    // 3. Add manual/loyalty discounts (already fixed amounts)
+    for (const manual of manualDiscounts) {
+      discountCharge += manual.discountAmount || 0;
+      discountBreakdown.push(manual);
     }
   }
 
@@ -604,6 +622,72 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Apply Loyalty Discount to Order
+ * POST /api/v1/orders/:orderId/apply-loyalty-discount
+ */
+const applyLoyaltyDiscountToOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  const { pointsToRedeem, loyaltyCustomerId } = req.body;
+
+  if (!pointsToRedeem || pointsToRedeem <= 0) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      status: "error",
+      message: "Points must be a positive number",
+    });
+  }
+
+  const Order = getOrderModel(req.restaurantDb);
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
+      status: "error",
+      message: "Order not found",
+    });
+  }
+
+  // 1. Redeems points using middleware utility
+  const result = await applyLoyaltyDiscount(
+    loyaltyCustomerId,
+    pointsToRedeem,
+    req.restaurantDb,
+    req.restaurantId,
+  );
+
+  if (!result.success) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      status: "error",
+      message: result.error,
+    });
+  }
+
+  // 2. Add loyalty discount to order
+  if (!order.discount) {
+    order.discount = { discounts: [], totalDiscountAmount: 0 };
+  }
+
+  order.discount.discounts.push({
+    discountId: null, // Indicates manual/loyalty discount
+    discountName: "Loyalty Points Redemption",
+    discountAmount: result.discountAmount,
+    pointsRedeemed: pointsToRedeem, // Supplemental info
+  });
+
+  // 3. Recalculate totals
+  await recalculateOrderTotals(order, req.restaurantDb);
+  await order.save();
+
+  res.status(HTTP_STATUS.OK).json({
+    status: "success",
+    message: result.message,
+    data: {
+      order,
+      remainingPoints: result.remainingPoints,
+    },
+  });
+});
+
 // 5. Remove Dine-In Order (If New/Pending)
 const removeDineInOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
@@ -747,6 +831,7 @@ module.exports = {
   lookupCustomer,
   addItemsToOrder,
   completeDineInCheckout,
+  applyLoyaltyDiscountToOrder,
   removeDineInOrder,
   removeOrderItem,
   recalculateOrderTotals,
