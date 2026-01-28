@@ -27,169 +27,7 @@ const {
 } = require("../../middleware/loyaltyMiddleware");
 const { awardLoyaltyPoints } = require("../../middleware/loyaltyMiddleware");
 
-// Helper to recalculate order totals
-const recalculateOrderTotals = async (order, restaurantDb) => {
-  const Item = getItemModel(restaurantDb);
-  // Tax and Discount models are needed if we were fetching by ID,
-  // but here we populate via Mongoose
-  const Tax = getTaxModel(restaurantDb);
-  const Discount = getDiscountModel(restaurantDb);
-
-  // Populate items with taxRate
-  // We need the tax documents physically to get the percentage
-  await order.populate({
-    path: "orderItems.item",
-    populate: { path: "taxRate", model: Tax },
-  });
-
-  let subtotal = 0;
-  // Use a map to accumulate tax amounts per Tax ID
-  let accumulatedTaxes = {}; // { [taxId]: { taxId, percentage, taxCharge } }
-
-  // Iterate over Order Items
-  for (const orderItem of order.orderItems) {
-    if (!orderItem.item) continue;
-
-    // Price and Quantity
-    const price = orderItem.price || 0;
-    const quantity = orderItem.quantity || 1;
-
-    // Calculate Item Total (including modifiers)
-    let modifiersTotal = 0;
-    if (orderItem.modifiers && Array.isArray(orderItem.modifiers)) {
-      modifiersTotal = orderItem.modifiers.reduce(
-        (sum, mod) => sum + (Number(mod.price) || 0),
-        0,
-      );
-    }
-    const lineItemTotal = (price + modifiersTotal) * quantity;
-
-    // Add to Subtotal
-    subtotal += lineItemTotal;
-
-    // Calculate Item-Level Tax
-    // Check if item is taxable and has tax rates
-    if (
-      orderItem.item.taxable &&
-      orderItem.item.taxRate &&
-      orderItem.item.taxRate.length > 0
-    ) {
-      for (const taxDoc of orderItem.item.taxRate) {
-        // Ensure taxDoc is populated and valid
-        if (taxDoc && typeof taxDoc.percentage === "number") {
-          const taxAmount = (lineItemTotal * taxDoc.percentage) / 100;
-
-          if (!accumulatedTaxes[taxDoc._id.toString()]) {
-            accumulatedTaxes[taxDoc._id.toString()] = {
-              taxId: taxDoc._id,
-              percentage: taxDoc.percentage,
-              taxCharge: 0,
-            };
-          }
-          accumulatedTaxes[taxDoc._id.toString()].taxCharge += taxAmount;
-        }
-      }
-    }
-  }
-
-  // Construct Tax Breakdown Array
-  const taxBreakdown = Object.values(accumulatedTaxes).map((t) => ({
-    taxId: t.taxId,
-    taxCharge: parseFloat(t.taxCharge.toFixed(2)),
-  }));
-
-  const totalTaxAmount = parseFloat(
-    taxBreakdown.reduce((sum, t) => sum + t.taxCharge, 0).toFixed(2),
-  );
-
-  // Discounts (Global Discounts Logic)
-  // We handle both defined discounts (via discountId) and manual/loyalty discounts (where discountId is null)
-  let discountCharge = 0;
-  const discountBreakdown = [];
-
-  if (order.discount && order.discount.discounts) {
-    // 1. Extract discounts that have a physical ID to re-calculate (percentage-based might change)
-    const linkedDiscounts = order.discount.discounts.filter((d) => d.discountId);
-    const manualDiscounts = order.discount.discounts.filter(
-      (d) => !d.discountId,
-    );
-
-    // 2. Re-calculate linked discounts from the database
-    if (linkedDiscounts.length > 0) {
-      const discountIds = linkedDiscounts.map((d) => d.discountId);
-      const discounts = await Discount.find({ _id: { $in: discountIds } });
-
-      for (const discountDoc of discounts) {
-        let amount = 0;
-        if (discountDoc.type === "fixed") {
-          amount = parseFloat(discountDoc.value);
-        } else if (discountDoc.type === "percentage") {
-          amount = parseFloat(
-            ((discountDoc.value * subtotal) / 100).toFixed(2),
-          );
-        }
-        discountCharge += amount;
-        discountBreakdown.push({
-          discountId: discountDoc._id,
-          discountName: discountDoc.discountName,
-          discountAmount: amount,
-        });
-      }
-    }
-
-    // 3. Add manual/loyalty discounts (already fixed amounts)
-    for (const manual of manualDiscounts) {
-      discountCharge += manual.discountAmount || 0;
-      discountBreakdown.push(manual);
-    }
-  }
-
-  // Tips & Delivery
-  const restaurantTip = order.restaurantTipCharge || 0;
-  const delivery = order.deliveryCharge || 0;
-  const deliveryTip = order.deliveryTipCharge || 0;
-
-  subtotal = parseFloat(subtotal.toFixed(2));
-  discountCharge = parseFloat(discountCharge.toFixed(2));
-  // Tax is already fixed per item accumulation, but total is fixed.
-
-  const orderFinalCharge = parseFloat(
-    (
-      subtotal +
-      totalTaxAmount +
-      restaurantTip +
-      delivery +
-      deliveryTip -
-      discountCharge
-    ).toFixed(2),
-  );
-
-  // Update Order
-  order.subtotal = subtotal;
-  order.tax = {
-    taxes: taxBreakdown,
-    totalTaxAmount: totalTaxAmount,
-  };
-  order.discount = {
-    discounts: discountBreakdown,
-    totalDiscountAmount: discountCharge,
-  };
-  order.orderFinalCharge = orderFinalCharge;
-  order.totalItemCount = order.orderItems.reduce(
-    (sum, item) => sum + item.quantity,
-    0,
-  );
-
-  // Update balanceDue
-  if (!order.payment)
-    order.payment = { totalPaid: 0, balanceDue: 0, history: [] };
-  const totalPaid = order.payment.totalPaid || 0;
-  order.payment.balanceDue = parseFloat(
-    (orderFinalCharge - totalPaid).toFixed(2),
-  );
-
-  return order;
-};
+const { recalculateOrderTotals } = require("./orderController");
 
 // 1. Get Tables Status
 const getTablesStatus = asyncHandler(async (req, res) => {
@@ -584,12 +422,9 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
 
   const saved = await order.save();
 
-  console.log("saved.orderStatus ", saved.orderStatus);
-  console.log("saved", saved);
-
   // Award loyalty points if order is completed
-  // if (saved.orderStatus === ORDER_STATUS.COMPLETED) {
-  if (true) {
+  if (saved.orderStatus === ORDER_STATUS.COMPLETED) {
+  // if (true) {
     try {
       await awardLoyaltyPoints(saved, req.restaurantDb);
     } catch (error) {
@@ -622,71 +457,7 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * Apply Loyalty Discount to Order
- * POST /api/v1/orders/:orderId/apply-loyalty-discount
- */
-const applyLoyaltyDiscountToOrder = asyncHandler(async (req, res) => {
-  const { orderId } = req.params;
-  const { pointsToRedeem, loyaltyCustomerId } = req.body;
-
-  if (!pointsToRedeem || pointsToRedeem <= 0) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      status: "error",
-      message: "Points must be a positive number",
-    });
-  }
-
-  const Order = getOrderModel(req.restaurantDb);
-  const order = await Order.findById(orderId);
-
-  if (!order) {
-    return res.status(HTTP_STATUS.NOT_FOUND).json({
-      status: "error",
-      message: "Order not found",
-    });
-  }
-
-  // 1. Redeems points using middleware utility
-  const result = await applyLoyaltyDiscount(
-    loyaltyCustomerId,
-    pointsToRedeem,
-    req.restaurantDb,
-    req.restaurantId,
-  );
-
-  if (!result.success) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      status: "error",
-      message: result.error,
-    });
-  }
-
-  // 2. Add loyalty discount to order
-  if (!order.discount) {
-    order.discount = { discounts: [], totalDiscountAmount: 0 };
-  }
-
-  order.discount.discounts.push({
-    discountId: null, // Indicates manual/loyalty discount
-    discountName: "Loyalty Points Redemption",
-    discountAmount: result.discountAmount,
-    pointsRedeemed: pointsToRedeem, // Supplemental info
-  });
-
-  // 3. Recalculate totals
-  await recalculateOrderTotals(order, req.restaurantDb);
-  await order.save();
-
-  res.status(HTTP_STATUS.OK).json({
-    status: "success",
-    message: result.message,
-    data: {
-      order,
-      remainingPoints: result.remainingPoints,
-    },
-  });
-});
+// (applyLoyaltyDiscountToOrder moved to orderController.js)
 
 // 5. Remove Dine-In Order (If New/Pending)
 const removeDineInOrder = asyncHandler(async (req, res) => {
@@ -831,8 +602,6 @@ module.exports = {
   lookupCustomer,
   addItemsToOrder,
   completeDineInCheckout,
-  applyLoyaltyDiscountToOrder,
   removeDineInOrder,
   removeOrderItem,
-  recalculateOrderTotals,
 };

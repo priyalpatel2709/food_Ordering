@@ -26,6 +26,7 @@ const {
   // updateOrderStatus,
   cancelOrder,
   // trackOrder
+  applyLoyaltyDiscountToOrder,
 } = require("../../controllers/order/orderController");
 
 const {
@@ -34,7 +35,6 @@ const {
   lookupCustomer,
   addItemsToOrder,
   completeDineInCheckout,
-  applyLoyaltyDiscountToOrder,
   removeDineInOrder,
   removeOrderItem,
 } = require("../../controllers/order/dineInController");
@@ -65,7 +65,7 @@ router.get(
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_READ),
-  lookupCustomer
+  lookupCustomer,
 );
 
 // Dine-In Routes
@@ -74,14 +74,14 @@ router.get(
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_READ),
-  getTablesStatus
+  getTablesStatus,
 );
 router.post(
   "/dine-in",
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_CREATE),
-  createDineInOrder
+  createDineInOrder,
 );
 
 router.post(
@@ -89,28 +89,29 @@ router.post(
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_DELETE),
-  cancelOrder
+  cancelOrder,
 );
 router.put(
   "/dine-in/:orderId/items",
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_UPDATE),
-  addItemsToOrder
+  addItemsToOrder,
 );
 router.post(
   "/dine-in/:orderId/pay",
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_UPDATE),
-  completeDineInCheckout
+  completeDineInCheckout,
 );
+// Apply loyalty discount to any order (Dine-in, Delivery, etc.)
 router.post(
-  "/dine-in/:orderId/apply-loyalty-discount",
+  "/:orderId/apply-loyalty-discount",
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_UPDATE),
-  applyLoyaltyDiscountToOrder
+  applyLoyaltyDiscountToOrder,
 );
 
 router.delete(
@@ -118,14 +119,14 @@ router.delete(
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_UPDATE),
-  removeOrderItem
+  removeOrderItem,
 );
 router.delete(
   "/dine-in/:orderId",
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_DELETE),
-  removeDineInOrder
+  removeDineInOrder,
 );
 
 // Scheduled Order Routes
@@ -134,7 +135,7 @@ router.get(
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_READ),
-  getScheduledOrders
+  getScheduledOrders,
 );
 
 router.put(
@@ -142,7 +143,7 @@ router.put(
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_UPDATE),
-  updateScheduledOrder
+  updateScheduledOrder,
 );
 
 router.post(
@@ -150,7 +151,7 @@ router.post(
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_UPDATE),
-  manualTriggerScheduled
+  manualTriggerScheduled,
 );
 
 router.delete(
@@ -158,7 +159,7 @@ router.delete(
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_DELETE),
-  cancelScheduledOrder
+  cancelScheduledOrder,
 );
 
 router.get("/my-orders", identifyTenant, protect, getUserOrders);
@@ -166,11 +167,11 @@ router.get("/my-orders", identifyTenant, protect, getUserOrders);
 // Create order with payment (atomic transaction)
 router.post(
   "/create-with-payment",
-  validateRequest(schemas.orderWithPayment),
+  // validateRequest(schemas.orderWithPayment),
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_CREATE),
-  createOrderWithPayment
+  createOrderWithPayment,
 );
 
 // Create new order (without immediate payment)
@@ -180,7 +181,7 @@ router.post(
   identifyTenant,
   protect,
   // authorize(PERMISSIONS.ORDER_CREATE),
-  createOrder
+  createOrder,
 );
 router.get(
   "/",
@@ -188,7 +189,7 @@ router.get(
   protect,
   authorize(PERMISSIONS.ORDER_READ),
   queryHandler,
-  getAllOrders
+  getAllOrders,
 );
 router.get(
   "/:id",
@@ -196,28 +197,28 @@ router.get(
   protect,
   queryHandler,
   authorize(PERMISSIONS.ORDER_READ),
-  getOrderById
+  getOrderById,
 );
 router.delete(
   "/",
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_DELETE),
-  deleteAll
+  deleteAll,
 );
 router.delete(
   "/:id",
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_DELETE),
-  deleteById
+  deleteById,
 );
 router.put(
   "/:id",
   identifyTenant,
   protect,
   authorize(PERMISSIONS.ORDER_UPDATE),
-  updateById
+  updateById,
 );
 
 module.exports = router;

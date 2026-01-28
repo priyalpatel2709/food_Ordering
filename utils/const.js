@@ -64,6 +64,8 @@ const TRANSACTION_STATUS = {
   COMPLETE: 'complete',
   FAILED: 'failed',
   REFUNDED: 'refunded',
+  PARTIALLY_REFUNDED: 'partially_refunded',
+  PARTIALLY_PAID: 'partially_paid',
 };
 
 // Address Types
