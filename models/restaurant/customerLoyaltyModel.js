@@ -174,6 +174,7 @@ const customerLoyaltySchema = new mongoose.Schema(
                     type: mongoose.Schema.Types.ObjectId,
                     ref: "User",
                 },
+                addedUserName: { type: String },
                 addedAt: { type: Date, default: Date.now },
             },
         ],
