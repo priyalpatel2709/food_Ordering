@@ -147,6 +147,15 @@ POST /api/v1/payment - Process payment
 POST /api/v1/payment/refund - Process refund (admin)
 ```
 
+### Cash Register (v1)
+```
+GET  /api/v1/cash-register - List all registers
+POST /api/v1/cash-register - Create new register
+POST /api/v1/cash-register/:id/open - Open cash session
+POST /api/v1/cash-register/:id/transaction - Manual transaction
+POST /api/v1/cash-register/:id/close - Close cash session
+```
+
 ## 🔒 Security Features
 
 - **Helmet**: Sets various HTTP headers for security

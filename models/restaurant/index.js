@@ -4,6 +4,7 @@ const getTaxModel = require("./taxModel");
 const getTableModel = require("./tableModel");
 const getWasteLogModel = require("./wasteLogModel");
 const getCustomerLoyaltyModel = require("./customerLoyaltyModel");
+const { getCashRegisterModel, getCashSessionModel } = require("./cashRegisterModel");
 
 module.exports = {
   getDiscountModel,
@@ -12,4 +13,6 @@ module.exports = {
   getTableModel,
   getWasteLogModel,
   getCustomerLoyaltyModel,
+  getCashRegisterModel,
+  getCashSessionModel,
 };

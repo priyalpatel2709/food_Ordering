@@ -8,6 +8,7 @@ const {
   ORDER_STATUS,
   PAYMENT_METHODS,
 } = require("../../../utils/const");
+const { recordCashSale, recordCashRefund } = require("../../../utils/cashRegisterUtils");
 
 const giveRefund = asyncHandler(async (req, res, next) => {
   try {
@@ -75,6 +76,19 @@ const giveRefund = asyncHandler(async (req, res, next) => {
     order.payment.paymentStatus = PAYMENT_STATUS.REFUNDED;
 
     await order.save();
+
+    // ==================== CASH REGISTER INTEGRATION ====================
+    const { method } = order.payment.history[0] || {};
+    if (method === PAYMENT_METHODS.CASH) {
+      await recordCashRefund(
+        req.restaurantDb,
+        req.restaurantId,
+        refundAmount,
+        order._id,
+        req.user
+      );
+    }
+    // ===================================================================
 
     res.status(200).json({
       status: "success",
@@ -167,6 +181,18 @@ const processPayment = asyncHandler(async (req, res, next) => {
     }
 
     await order.save();
+
+    // ==================== CASH REGISTER INTEGRATION ====================
+    if (method === PAYMENT_METHODS.CASH) {
+      await recordCashSale(
+        req.restaurantDb,
+        req.restaurantId,
+        Number(amount),
+        order._id,
+        req.user
+      );
+    }
+    // ===================================================================
 
     res.status(200).json({
       status: "success",

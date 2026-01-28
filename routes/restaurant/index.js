@@ -5,6 +5,7 @@ const dashboardRouters = require("./dashboardRoute");
 const tableRouters = require("./tableRoute");
 const wasteRouters = require("./wasteRoutes");
 const loyaltyRouters = require("./loyaltyRoutes");
+const cashRegisterRouters = require("./cashRegisterRoute");
 
 module.exports = {
   restaurantRouters,
@@ -14,4 +15,5 @@ module.exports = {
   tableRouters,
   wasteRouters,
   loyaltyRouters,
+  cashRegisterRouters,
 };

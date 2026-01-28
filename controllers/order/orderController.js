@@ -1,5 +1,9 @@
 const asyncHandler = require("express-async-handler");
-const { CACHE_PREFIXES, getRestaurantKey, getOrSet } = require("../../utils/cache");
+const {
+  CACHE_PREFIXES,
+  getRestaurantKey,
+  getOrSet,
+} = require("../../utils/cache");
 const crudOperations = require("../../utils/crudOperations");
 const {
   getOrderModel,
@@ -17,9 +21,8 @@ const {
   TRANSACTION_STATUS,
   HTTP_STATUS,
 } = require("../../utils/const");
-const { notifyOrderUpdate } = require("../../services/realtimeService");
 const { applyLoyaltyDiscount } = require("../../middleware/loyaltyMiddleware");
-
+const { recordCashSale } = require("../../utils/cashRegisterUtils");
 
 const createOrder = asyncHandler(async (req, res, next) => {
   try {
@@ -56,7 +59,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
     // Batch fetch items using cache
     const items = await getOrSet(
       getRestaurantKey(CACHE_PREFIXES.ITEMS, req.restaurantId),
-      () => Item.find({ isAvailable: true })
+      () => Item.find({ isAvailable: true }),
     );
 
     const itemsMap = {};
@@ -142,7 +145,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
     let taxCharge = 0;
     const allTaxes = await getOrSet(
       getRestaurantKey(CACHE_PREFIXES.TAXES, req.restaurantId),
-      () => Tax.find({})
+      () => Tax.find({}),
     );
     const taxes = allTaxes.filter((t) => taxIds.includes(t._id.toString()));
 
@@ -162,10 +165,10 @@ const createOrder = asyncHandler(async (req, res, next) => {
     let discountCharge = 0;
     const allDiscounts = await getOrSet(
       getRestaurantKey(CACHE_PREFIXES.DISCOUNTS, req.restaurantId),
-      () => Discount.find({})
+      () => Discount.find({}),
     );
     const discounts = allDiscounts.filter((d) =>
-      discountIds.includes(d._id.toString())
+      discountIds.includes(d._id.toString()),
     );
     const discountBreakdown = discounts.map((discountDoc) => {
       let amount = 0;
@@ -484,7 +487,7 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
     const itemIds = clientOrderItems.map((item) => item.item);
     const allItems = await getOrSet(
       getRestaurantKey(CACHE_PREFIXES.ITEMS, req.restaurantId),
-      () => Item.find({ isAvailable: true })
+      () => Item.find({ isAvailable: true }),
     );
 
     // Create a map for quick lookup
@@ -563,7 +566,7 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
     if (taxIds.length > 0) {
       const allTaxes = await getOrSet(
         getRestaurantKey(CACHE_PREFIXES.TAXES, req.restaurantId),
-        () => Tax.find({})
+        () => Tax.find({}),
       );
       const taxes = allTaxes.filter((t) => taxIds.includes(t._id.toString()));
 
@@ -588,10 +591,10 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
     if (discountIds.length > 0) {
       const allDiscounts = await getOrSet(
         getRestaurantKey(CACHE_PREFIXES.DISCOUNTS, req.restaurantId),
-        () => Discount.find({})
+        () => Discount.find({}),
       );
       const discounts = allDiscounts.filter((d) =>
-        discountIds.includes(d._id.toString())
+        discountIds.includes(d._id.toString()),
       );
 
       for (const discountDoc of discounts) {
@@ -748,11 +751,21 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
 
     // Log successful order creation
     logger.info("Order created with payment", {
-      orderId: savedOrder.orderId,
-      customerId: req.user._id,
-      amount: orderFinalCharge,
-      paymentMethod: method,
+      orderId: savedOrder._id,
+      restaurantId: req.restaurantId,
     });
+
+    // ==================== CASH REGISTER INTEGRATION ====================
+    if (method === "cash") {
+      await recordCashSale(
+        req.restaurantDb,
+        req.restaurantId,
+        paidAmount,
+        savedOrder._id,
+        req.user,
+        req.body.cashRegisterId,
+      );
+    }
 
     // ==================== RETURN RESPONSE ====================
 
@@ -924,7 +937,9 @@ const recalculateOrderTotals = async (order, restaurantDb) => {
   const discountBreakdown = [];
 
   if (order.discount && order.discount.discounts) {
-    const linkedDiscounts = order.discount.discounts.filter((d) => d.discountId);
+    const linkedDiscounts = order.discount.discounts.filter(
+      (d) => d.discountId,
+    );
     const manualDiscounts = order.discount.discounts.filter(
       (d) => !d.discountId,
     );
@@ -1072,5 +1087,5 @@ module.exports = {
   createOrderWithPayment,
   cancelOrder,
   recalculateOrderTotals,
-  applyLoyaltyDiscountToOrder
+  applyLoyaltyDiscountToOrder,
 };

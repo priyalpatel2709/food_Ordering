@@ -53,8 +53,9 @@ const {
   dashboardRouters,
   rbacRoutes,
   tableRouters,
-  wasteRouters,
+  wasteRouters, //need to add
   loyaltyRouters,
+  cashRegisterRouters,
 } = require("./routes");
 
 const app = express();
@@ -124,6 +125,7 @@ app.use("/api/v1/table", tableRouters);
 app.use("/api/v1/rbac", rbacRoutes);
 app.use("/api/v1/waste", wasteRouters);
 app.use("/api/v1/loyalty", loyaltyRouters);
+app.use("/api/v1/cash-register", cashRegisterRouters);
 
 // API routes - V2
 app.use("/api/v2/menu", menuRouteV2);
