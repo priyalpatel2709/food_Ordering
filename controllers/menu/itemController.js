@@ -9,10 +9,13 @@ const {
 } = require("../../models/index");
 const { getQueryParams } = require("../../utils/utils");
 
+const { CACHE_PREFIXES, invalidate, getRestaurantKey } = require("../../utils/cache");
+
 const createItem = asyncHandler(async (req, res, next) => {
   const Item = getItemModel(req.restaurantDb);
   const itemOperations = crudOperations({
     mainModel: Item,
+    cacheKeyPrefix: CACHE_PREFIXES.ITEMS,
   });
   itemOperations.create(req, res, next);
 });
@@ -100,6 +103,8 @@ const bulkUploadItems = asyncHandler(async (req, res, next) => {
 
   if (itemsToInsert.length > 0) {
     await Item.insertMany(itemsToInsert);
+    // Invalidate cache after bulk insert
+    invalidate(getRestaurantKey(CACHE_PREFIXES.ITEMS, req.restaurantId));
   }
 
   res.status(201).json({
@@ -119,6 +124,7 @@ const getAllItems = asyncHandler(async (req, res, next) => {
   const itemOperations = crudOperations({
     mainModel: Item,
     searchFields: ["name", "description"],
+    cacheKeyPrefix: CACHE_PREFIXES.ITEMS,
     populateModels: [
       {
         field: "category",
@@ -148,6 +154,7 @@ const getItemById = asyncHandler(async (req, res, next) => {
 
   const itemOperations = crudOperations({
     mainModel: Item,
+    cacheKeyPrefix: CACHE_PREFIXES.ITEMS,
     populateModels: [
       {
         field: "category",
@@ -173,6 +180,7 @@ const deleteById = asyncHandler(async (req, res, next) => {
   const Item = getItemModel(req.restaurantDb);
   const itemOperations = crudOperations({
     mainModel: Item,
+    cacheKeyPrefix: CACHE_PREFIXES.ITEMS,
   });
   itemOperations.deleteById(req, res, next);
 });
@@ -181,6 +189,7 @@ const updateById = asyncHandler(async (req, res, next) => {
   const Item = getItemModel(req.restaurantDb);
   const itemOperations = crudOperations({
     mainModel: Item,
+    cacheKeyPrefix: CACHE_PREFIXES.ITEMS,
   });
   itemOperations.updateById(req, res, next);
 });

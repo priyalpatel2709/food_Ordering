@@ -161,7 +161,7 @@ const processPayment = asyncHandler(async (req, res, next) => {
     if (order.payment.balanceDue <= 0) {
       order.payment.paymentStatus = PAYMENT_STATUS.PAID;
       order.payment.balanceDue = 0; // Ensure no negative balance
-      order.orderStatus = ORDER_STATUS.CONFIRMED; // Or COMPLETED if that's the flow
+      order.orderStatus = ORDER_STATUS.COMPLETED; // Or COMPLETED if that's the flow
     } else {
       order.payment.paymentStatus = PAYMENT_STATUS.PARTIALLY_PAID;
     }

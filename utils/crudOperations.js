@@ -19,9 +19,17 @@ const populateNestedFields = (query, populateFields) => {
   return query.populate(buildPopulateObject(populateFields));
 };
 
+const { invalidate, getRestaurantKey } = require("./cache");
+
 // CRUD operations generator function
 const crudOperations = (models) => {
-  const { mainModel, populateModels = [], select } = models;
+  const { mainModel, populateModels = [], select, cacheKeyPrefix } = models;
+
+  const handleCacheInvalidation = (req) => {
+    if (cacheKeyPrefix && req.restaurantId) {
+      invalidate(getRestaurantKey(cacheKeyPrefix, req.restaurantId));
+    }
+  };
 
   return {
     // Get all documents
@@ -111,6 +119,7 @@ const crudOperations = (models) => {
       try {
         const newDocument = new mainModel(req.body);
         const savedDocument = await newDocument.save();
+        handleCacheInvalidation(req);
         res.status(201).json(savedDocument);
       } catch (err) {
         next(
@@ -145,6 +154,7 @@ const crudOperations = (models) => {
           let query = mainModel.findById(updatedDocument._id);
           query = await populateNestedFields(query, populateModels);
           const populatedDocument = await query;
+          handleCacheInvalidation(req);
           res.status(200).json(populatedDocument);
         } else {
           next(createError(404, "Document not found"));
@@ -164,6 +174,7 @@ const crudOperations = (models) => {
           req.params.id
         );
         if (deletedDocument) {
+          handleCacheInvalidation(req);
           res.status(200).json({ message: "Document deleted successfully" });
         } else {
           next(createError(404, "Document not found"));
@@ -180,6 +191,7 @@ const crudOperations = (models) => {
     deleteAll: async (req, res, next) => {
       try {
         await mainModel.deleteMany({});
+        handleCacheInvalidation(req);
         res.status(200).json({ message: "All documents deleted successfully" });
       } catch (err) {
         console.error("Error in deleteAll:", err); // Log the error for debugging

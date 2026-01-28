@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const { getMenuModel } = require("../../../models/index");
 
 const { format } = require("date-fns");
+const { CACHE_PREFIXES, getRestaurantKey, getOrSet } = require("../../../utils/cache");
 
 const currentMenu = asyncHandler(async (req, res, next) => {
   try {
@@ -43,180 +44,184 @@ const currentMenu = asyncHandler(async (req, res, next) => {
       };
     }
 
-    const menus = await Menu.aggregate([
-      {
-        $match: matchStage,
-      },
-      {
-        $lookup: {
-          from: "categories",
-          localField: "categories",
-          foreignField: "_id",
-          as: "categories",
+    const cacheKey = getRestaurantKey(CACHE_PREFIXES.MENU, req.restaurantId) + (menuId ? `_${menuId}` : `_current_${currentDay}_${currentTime}`);
+
+    const menus = await getOrSet(cacheKey, async () => {
+      return await Menu.aggregate([
+        {
+          $match: matchStage,
         },
-      },
-      {
-        $addFields: {
-          categories: {
-            $filter: {
-              input: "$categories",
-              as: "cat",
-              cond: { $eq: ["$$cat.isActive", true] },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "categories",
+            foreignField: "_id",
+            as: "categories",
+          },
+        },
+        {
+          $addFields: {
+            categories: {
+              $filter: {
+                input: "$categories",
+                as: "cat",
+                cond: { $eq: ["$$cat.isActive", true] },
+              },
             },
           },
         },
-      },
-      {
-        $lookup: {
-          from: "items",
-          localField: "items.item",
-          foreignField: "_id",
-          as: "resolvedItems",
+        {
+          $lookup: {
+            from: "items",
+            localField: "items.item",
+            foreignField: "_id",
+            as: "resolvedItems",
+          },
         },
-      },
-      {
-        $unwind: "$items",
-      },
-      {
-        $addFields: {
-          currentItem: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$resolvedItems",
-                  as: "ri",
-                  cond: { $eq: ["$$ri._id", "$items.item"] },
+        {
+          $unwind: "$items",
+        },
+        {
+          $addFields: {
+            currentItem: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: "$resolvedItems",
+                    as: "ri",
+                    cond: { $eq: ["$$ri._id", "$items.item"] },
+                  },
                 },
-              },
-              0,
-            ],
+                0,
+              ],
+            },
           },
         },
-      },
-      {
-        $lookup: {
-          from: "customizationoptions",
-          localField: "currentItem.customizationOptions",
-          foreignField: "_id",
-          as: "currentItem.customizationOptions",
-        },
-      },
-      {
-        $lookup: {
-          from: "categories",
-          localField: "currentItem.category",
-          foreignField: "_id",
-          as: "currentItem.category",
-        },
-      },
-      {
-        $lookup: {
-          from: "taxes",
-          localField: "currentItem.taxRate",
-          foreignField: "_id",
-          as: "currentItem.taxRate",
-        },
-      },
-      {
-        $addFields: {
-          currentItem: {
-            $mergeObjects: [
-              "$currentItem",
-              {
-                taxRate: { $arrayElemAt: ["$currentItem.taxRate", 0] },
-                category: { $arrayElemAt: ["$currentItem.category", 0] },
-              },
-            ],
+        {
+          $lookup: {
+            from: "customizationoptions",
+            localField: "currentItem.customizationOptions",
+            foreignField: "_id",
+            as: "currentItem.customizationOptions",
           },
         },
-      },
-      {
-        $addFields: {
-          "currentItem.finalPrice": {
-            $cond: [
-              {
-                $gt: [
-                  {
-                    $size: {
-                      $filter: {
-                        input: "$items.specialEventPricing",
-                        as: "event",
-                        cond: {
-                          $eq: ["$$event.date", currentDate],
+        {
+          $lookup: {
+            from: "categories",
+            localField: "currentItem.category",
+            foreignField: "_id",
+            as: "currentItem.category",
+          },
+        },
+        {
+          $lookup: {
+            from: "taxes",
+            localField: "currentItem.taxRate",
+            foreignField: "_id",
+            as: "currentItem.taxRate",
+          },
+        },
+        {
+          $addFields: {
+            currentItem: {
+              $mergeObjects: [
+                "$currentItem",
+                {
+                  taxRate: { $arrayElemAt: ["$currentItem.taxRate", 0] },
+                  category: { $arrayElemAt: ["$currentItem.category", 0] },
+                },
+              ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            "currentItem.finalPrice": {
+              $cond: [
+                {
+                  $gt: [
+                    {
+                      $size: {
+                        $filter: {
+                          input: "$items.specialEventPricing",
+                          as: "event",
+                          cond: {
+                            $eq: ["$$event.date", currentDate],
+                          },
                         },
                       },
                     },
-                  },
-                  0,
-                ],
-              },
-              {
-                $multiply: [
-                  "$currentItem.price",
-                  {
-                    $arrayElemAt: [
-                      {
-                        $map: {
-                          input: {
-                            $filter: {
-                              input: "$items.specialEventPricing",
-                              as: "event",
-                              cond: { $eq: ["$$event.date", currentDate] },
-                            },
-                          },
-                          as: "se",
-                          in: "$$se.priceMultiplier",
-                        },
-                      },
-                      0,
-                    ],
-                  },
-                ],
-              },
-              "$currentItem.price",
-            ],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: "$_id",
-          name: { $first: "$name" },
-          description: { $first: "$description" },
-          categories: { $first: "$categories" },
-          items: {
-            $push: {
-              ...{
-                $mergeObjects: [
-                  "$items",
-                  {
-                    item: {
-                      $mergeObjects: [
-                        "$currentItem",
+                    0,
+                  ],
+                },
+                {
+                  $multiply: [
+                    "$currentItem.price",
+                    {
+                      $arrayElemAt: [
                         {
-                          price: "$currentItem.finalPrice",
+                          $map: {
+                            input: {
+                              $filter: {
+                                input: "$items.specialEventPricing",
+                                as: "event",
+                                cond: { $eq: ["$$event.date", currentDate] },
+                              },
+                            },
+                            as: "se",
+                            in: "$$se.priceMultiplier",
+                          },
                         },
+                        0,
                       ],
                     },
-                  },
-                ],
+                  ],
+                },
+                "$currentItem.price",
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$name" },
+            description: { $first: "$description" },
+            categories: { $first: "$categories" },
+            items: {
+              $push: {
+                ...{
+                  $mergeObjects: [
+                    "$items",
+                    {
+                      item: {
+                        $mergeObjects: [
+                          "$currentItem",
+                          {
+                            price: "$currentItem.finalPrice",
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
               },
             },
           },
         },
-      },
-      {
-        $project: {
-          "items.specialEventPricing": 0,
-          "items.timeBasedPricing": 0,
-          "items.membershipPricing": 0,
-          "items.bulkPricing": 0,
-          "items.locationPricing": 0,
-          "items.comboPricing": 0,
-          "items.additionalFees": 0,
+        {
+          $project: {
+            "items.specialEventPricing": 0,
+            "items.timeBasedPricing": 0,
+            "items.membershipPricing": 0,
+            "items.bulkPricing": 0,
+            "items.locationPricing": 0,
+            "items.comboPricing": 0,
+            "items.additionalFees": 0,
+          },
         },
-      },
-    ]);
+      ]);
+    });
 
     return res.status(200).json({
       success: true,

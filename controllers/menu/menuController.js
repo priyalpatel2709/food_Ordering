@@ -11,11 +11,13 @@ const {
 } = require("../../models/index");
 const { getQueryParams } = require("../../utils/utils");
 const { format } = require("date-fns");
+const { CACHE_PREFIXES, invalidate, getRestaurantKey, getOrSet } = require("../../utils/cache");
 
 const createMenu = asyncHandler(async (req, res, next) => {
   const Menu = getMenuModel(req.restaurantDb);
   const menuOperations = crudOperations({
     mainModel: Menu,
+    cacheKeyPrefix: CACHE_PREFIXES.MENU,
   });
   menuOperations.create(req, res, next);
 });
@@ -33,6 +35,7 @@ const getAllMenus = asyncHandler(async (req, res, next) => {
   const menuOperations = crudOperations({
     mainModel: Menu,
     searchFields: ["name", "description"],
+    cacheKeyPrefix: CACHE_PREFIXES.MENU,
     populateModels: [
       {
         field: "categories",
@@ -75,6 +78,7 @@ const getMenuById = asyncHandler(async (req, res, next) => {
 
   const menuOperations = crudOperations({
     mainModel: Menu,
+    cacheKeyPrefix: CACHE_PREFIXES.MENU,
     populateModels: [
       {
         field: "categories",
@@ -107,6 +111,7 @@ const deleteById = asyncHandler(async (req, res, next) => {
   const Menu = getMenuModel(req.restaurantDb);
   const menuOperations = crudOperations({
     mainModel: Menu,
+    cacheKeyPrefix: CACHE_PREFIXES.MENU,
   });
   menuOperations.deleteById(req, res, next);
 });
@@ -132,57 +137,120 @@ const currentMenu = asyncHandler(async (req, res, next) => {
     const currentTime = format(now, "HH:mm");
     const date = format(now, "yyyy/MM/dd");
 
-    // Create query
-    const menuQuery = {
-      isActive: true,
-      "availableDays.day": "Monday", //* make change
-      "availableDays.timeSlots": {
-        $elemMatch: {
-          openTime: { $lte: "08:00" }, //* make change
-          closeTime: { $gt: "08:00" }, //* make change
+    const cacheKey = getRestaurantKey(CACHE_PREFIXES.MENU, req.restaurantId) + `_v1_current_${day}_${currentTime}`;
+
+    const updatedMenus = await getOrSet(cacheKey, async () => {
+      // Create query
+      const menuQuery = {
+        isActive: true,
+        "availableDays.day": day,
+        "availableDays.timeSlots": {
+          $elemMatch: {
+            openTime: { $lte: currentTime },
+            closeTime: { $gt: currentTime },
+          },
         },
-      },
-    };
+      };
 
-    // Performance optimizations for large data sets
-    const menus = await Menu.find(menuQuery)
-      .select(
-        "-availableDays -taxes -discounts -metaData -createdAt -updatedAt -__v",
-      )
-      .lean()
-      .populate({
-        path: "categories",
-        model: Category,
-        select:
-          "name description isActive displayOrder categoryImage color _id",
-        match: { isActive: true },
-        options: { sort: { displayOrder: 1 } },
-      })
-      .populate({
-        path: "items.item",
-        model: Item,
-        select: "-restaurantId -__v -createdAt -updatedAt",
-        populate: [
-          {
-            path: "customizationOptions",
-            model: CustomizationOptions,
-            select: "-createdAt -updatedAt -__v -_id -restaurantId -metaData",
-          },
-          {
-            path: "category",
-            model: Category,
-            select: "_id color",
-          },
-          {
-            path: "taxRate",
-            model: TaxRate,
-            select: "name percentage isActive -_id",
-          },
-        ],
-      })
-      .exec();
+      // Performance optimizations for large data sets
+      const menus = await Menu.find(menuQuery)
+        .select(
+          "-availableDays -taxes -discounts -metaData -createdAt -updatedAt -__v"
+        )
+        .lean()
+        .populate({
+          path: "categories",
+          model: Category,
+          select:
+            "name description isActive displayOrder categoryImage color _id",
+          match: { isActive: true },
+          options: { sort: { displayOrder: 1 } },
+        })
+        .populate({
+          path: "items.item",
+          model: Item,
+          select: "-restaurantId -__v -createdAt -updatedAt",
+          populate: [
+            {
+              path: "customizationOptions",
+              model: CustomizationOptions,
+              select: "-createdAt -updatedAt -__v -_id -restaurantId -metaData",
+            },
+            {
+              path: "category",
+              model: Category,
+              select: "_id color",
+            },
+            {
+              path: "taxRate",
+              model: TaxRate,
+              select: "name percentage isActive -_id",
+            },
+          ],
+        })
+        .exec();
 
-    if (!menus || menus.length === 0) {
+      if (!menus || menus.length === 0) return [];
+
+      // Process menus with careful error handling
+      return menus.map((menu) => {
+        // Process categories
+        const filteredCategories = (menu.categories || []).filter(Boolean);
+
+        // Process items safely
+        const processedItems = (menu.items || [])
+          .map((item) => {
+            if (!item || !item.item) return null;
+
+            // Handle defaultPrice safely
+            const basePrice =
+              typeof item.item.price === "number" ? item.item.price : 0;
+
+            // Find applicable special event pricing with validation
+            let adjustedPrice = basePrice;
+            if (Array.isArray(item.specialEventPricing)) {
+              const specialEvent = item.specialEventPricing.find(
+                (event) => event && event.date === date
+              );
+
+              if (
+                specialEvent &&
+                typeof specialEvent.priceMultiplier === "number" &&
+                specialEvent.priceMultiplier > 0
+              ) {
+                adjustedPrice = basePrice * specialEvent.priceMultiplier;
+              }
+            }
+
+            // Format price to 2 decimal places
+            adjustedPrice = parseFloat(adjustedPrice.toFixed(2));
+
+            return {
+              ...item,
+              finalPrice: adjustedPrice,
+              // Remove unnecessary nested objects to reduce payload size
+              specialEventPricing: undefined,
+              timeBasedPricing: undefined,
+              membershipPricing: undefined,
+              bulkPricing: undefined,
+              locationPricing: undefined,
+              comboPricing: undefined,
+              additionalFees: undefined,
+            };
+          })
+          .filter(Boolean);
+
+        return {
+          _id: menu._id,
+          name: menu.name,
+          description: menu.description,
+          categories: filteredCategories,
+          items: processedItems,
+        };
+      });
+    });
+
+    if (updatedMenus.length === 0) {
       return res.status(200).json({
         success: true,
         message: "No active menus available for the current time",
@@ -191,63 +259,6 @@ const currentMenu = asyncHandler(async (req, res, next) => {
         currentTime: currentTime,
       });
     }
-
-    // Process menus with careful error handling
-    const updatedMenus = menus.map((menu) => {
-      // Process categories
-      const filteredCategories = (menu.categories || []).filter(Boolean);
-
-      // Process items safely
-      const processedItems = (menu.items || [])
-        .map((item) => {
-          if (!item || !item.item) return null;
-
-          // Handle defaultPrice safely
-          const basePrice =
-            typeof item.item.price === "number" ? item.item.price : 0;
-
-          // Find applicable special event pricing with validation
-          let adjustedPrice = basePrice;
-          if (Array.isArray(item.specialEventPricing)) {
-            const specialEvent = item.specialEventPricing.find(
-              (event) => event && event.date === date,
-            );
-
-            if (
-              specialEvent &&
-              typeof specialEvent.priceMultiplier === "number" &&
-              specialEvent.priceMultiplier > 0
-            ) {
-              adjustedPrice = basePrice * specialEvent.priceMultiplier;
-            }
-          }
-
-          // Format price to 2 decimal places
-          adjustedPrice = parseFloat(adjustedPrice.toFixed(2));
-
-          return {
-            ...item,
-            finalPrice: adjustedPrice,
-            // Remove unnecessary nested objects to reduce payload size
-            specialEventPricing: undefined,
-            timeBasedPricing: undefined,
-            membershipPricing: undefined,
-            bulkPricing: undefined,
-            locationPricing: undefined,
-            comboPricing: undefined,
-            additionalFees: undefined,
-          };
-        })
-        .filter(Boolean);
-
-      return {
-        _id: menu._id,
-        name: menu.name,
-        description: menu.description,
-        categories: filteredCategories,
-        items: processedItems,
-      };
-    });
 
     return res.status(200).json(updatedMenus);
   } catch (error) {
@@ -261,6 +272,7 @@ const updateById = asyncHandler(async (req, res, next) => {
   const Menu = getMenuModel(req.restaurantDb);
   const menuOperations = crudOperations({
     mainModel: Menu,
+    cacheKeyPrefix: CACHE_PREFIXES.MENU,
   });
   menuOperations.updateById(req, res, next);
 });
@@ -349,6 +361,9 @@ const updateMenu = async (req, res, next) => {
       message: "Document updated successfully",
       data: updatedDocument,
     });
+
+    // Invalidate menu cache
+    invalidate(getRestaurantKey(CACHE_PREFIXES.MENU, req.restaurantId));
   } catch (err) {
     console.error("Error updating available day:", err);
 
@@ -396,6 +411,9 @@ const addItemToMenu = asyncHandler(async (req, res, next) => {
     message: "Item added to menu successfully",
     data: updatedMenu,
   });
+
+  // Invalidate menu cache
+  invalidate(getRestaurantKey(CACHE_PREFIXES.MENU, req.restaurantId));
 });
 
 module.exports = {

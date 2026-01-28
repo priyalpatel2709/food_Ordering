@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const { CACHE_PREFIXES, getRestaurantKey, getOrSet } = require("../../utils/cache");
 const crudOperations = require("../../utils/crudOperations");
 const {
   getOrderModel,
@@ -52,11 +53,17 @@ const createOrder = asyncHandler(async (req, res, next) => {
     // Performance optimization: Collect all item IDs
     const itemIds = clientOrderItems.map((item) => item.item);
 
-    // Batch fetch all items in a single query instead of separate queries
+    // Batch fetch items using cache
+    const items = await getOrSet(
+      getRestaurantKey(CACHE_PREFIXES.ITEMS, req.restaurantId),
+      () => Item.find({ isAvailable: true })
+    );
+
     const itemsMap = {};
-    const items = await Item.find({ _id: { $in: itemIds } });
     items.forEach((item) => {
-      itemsMap[item._id.toString()] = item;
+      if (itemIds.includes(item._id.toString())) {
+        itemsMap[item._id.toString()] = item;
+      }
     });
 
     // Initialize values
@@ -131,9 +138,14 @@ const createOrder = asyncHandler(async (req, res, next) => {
       });
     }
 
-    // Batch fetch all taxes
+    // Batch fetch all taxes using cache
     let taxCharge = 0;
-    const taxes = await Tax.find({ _id: { $in: taxIds } });
+    const allTaxes = await getOrSet(
+      getRestaurantKey(CACHE_PREFIXES.TAXES, req.restaurantId),
+      () => Tax.find({})
+    );
+    const taxes = allTaxes.filter((t) => taxIds.includes(t._id.toString()));
+
     const taxBreakdown = taxes.map((taxDoc) => {
       const charge = parseFloat(
         ((subtotal * taxDoc.percentage) / 100).toFixed(2),
@@ -146,9 +158,15 @@ const createOrder = asyncHandler(async (req, res, next) => {
       };
     });
 
-    // Batch fetch all discounts
+    // Batch fetch all discounts using cache
     let discountCharge = 0;
-    const discounts = await Discount.find({ _id: { $in: discountIds } });
+    const allDiscounts = await getOrSet(
+      getRestaurantKey(CACHE_PREFIXES.DISCOUNTS, req.restaurantId),
+      () => Discount.find({})
+    );
+    const discounts = allDiscounts.filter((d) =>
+      discountIds.includes(d._id.toString())
+    );
     const discountBreakdown = discounts.map((discountDoc) => {
       let amount = 0;
 
@@ -462,14 +480,19 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
 
     // ==================== FETCH ITEMS ====================
 
-    // Batch fetch all items in a single query
+    // Batch fetch all items using cache
     const itemIds = clientOrderItems.map((item) => item.item);
-    const items = await Item.find({ _id: { $in: itemIds } });
+    const allItems = await getOrSet(
+      getRestaurantKey(CACHE_PREFIXES.ITEMS, req.restaurantId),
+      () => Item.find({ isAvailable: true })
+    );
 
     // Create a map for quick lookup
     const itemsMap = {};
-    items.forEach((item) => {
-      itemsMap[item._id.toString()] = item;
+    allItems.forEach((item) => {
+      if (itemIds.includes(item._id.toString())) {
+        itemsMap[item._id.toString()] = item;
+      }
     });
 
     // ==================== CALCULATE PRICES ====================
@@ -538,7 +561,11 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
     const taxBreakdown = [];
 
     if (taxIds.length > 0) {
-      const taxes = await Tax.find({ _id: { $in: taxIds } });
+      const allTaxes = await getOrSet(
+        getRestaurantKey(CACHE_PREFIXES.TAXES, req.restaurantId),
+        () => Tax.find({})
+      );
+      const taxes = allTaxes.filter((t) => taxIds.includes(t._id.toString()));
 
       for (const taxDoc of taxes) {
         const charge = parseFloat(
@@ -559,7 +586,13 @@ const createOrderWithPayment = asyncHandler(async (req, res) => {
     const discountBreakdown = [];
 
     if (discountIds.length > 0) {
-      const discounts = await Discount.find({ _id: { $in: discountIds } });
+      const allDiscounts = await getOrSet(
+        getRestaurantKey(CACHE_PREFIXES.DISCOUNTS, req.restaurantId),
+        () => Discount.find({})
+      );
+      const discounts = allDiscounts.filter((d) =>
+        discountIds.includes(d._id.toString())
+      );
 
       for (const discountDoc of discounts) {
         let amount = 0;
