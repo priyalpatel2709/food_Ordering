@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const cashSessionSchema = new mongoose.Schema({
+    registerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CashRegister",
+        required: true,
+    },
     openedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -12,6 +17,10 @@ const cashSessionSchema = new mongoose.Schema({
         default: 0,
     },
     openingNotes: String,
+    businessDate: {
+        type: Date,
+        required: true,
+    },
     openedAt: {
         type: Date,
         default: Date.now,

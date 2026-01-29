@@ -11,7 +11,7 @@ const connections = {};
  * @returns {string} The MongoDB connection URI
  */
 const getDatabaseUri = (restaurantId) => {
-  const template = process.env.MONGO_URI_LIVE;
+  const template = process.env.MONGO_URI;
   if (!template) {
     throw new Error("MONGO_URI environment variable is not set");
   }
@@ -70,7 +70,7 @@ const connectToDatabase = async (restaurantId) => {
 
     logger.info(`Connected to DB for restaurant ${restaurantId}`.green);
     console.log(
-      `Connected to DB for restaurant ${restaurantId}`.underline.bgGreen
+      `Connected to DB for restaurant ${restaurantId}`.underline.bgGreen,
     );
 
     connections[restaurantId] = connection;
@@ -81,7 +81,7 @@ const connectToDatabase = async (restaurantId) => {
       stack: error.stack,
     });
     throw new Error(
-      `Database connection failed for ${restaurantId}: ${error.message}`
+      `Database connection failed for ${restaurantId}: ${error.message}`,
     );
   }
 };
@@ -109,7 +109,7 @@ const closeAllConnections = async () => {
         } catch (error) {
           logger.error(`Error closing connection for ${id}:`, error.message);
         }
-      })
+      }),
     );
     logger.info("All database connections closed successfully");
   } catch (error) {

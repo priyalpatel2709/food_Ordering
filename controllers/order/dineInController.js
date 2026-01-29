@@ -28,6 +28,7 @@ const {
 const { awardLoyaltyPoints } = require("../../middleware/loyaltyMiddleware");
 
 const { recalculateOrderTotals } = require("./orderController");
+const { recordCashSale } = require("../../utils/cashRegisterUtils");
 
 // 1. Get Tables Status
 const getTablesStatus = asyncHandler(async (req, res) => {
@@ -422,9 +423,25 @@ const completeDineInCheckout = asyncHandler(async (req, res) => {
 
   const saved = await order.save();
 
+  // ==================== CASH REGISTER INTEGRATION ====================
+  if (method === "cash") {
+    try {
+      await recordCashSale(
+        req.restaurantDb,
+        req.restaurantId,
+        payAmount,
+        saved._id,
+        req.user,
+        payment.cashRegisterId,
+      );
+    } catch (error) {
+      console.error("Error recording cash sale:", error);
+    }
+  }
+
   // Award loyalty points if order is completed
   if (saved.orderStatus === ORDER_STATUS.COMPLETED) {
-  // if (true) {
+    // if (true) {
     try {
       await awardLoyaltyPoints(saved, req.restaurantDb);
     } catch (error) {

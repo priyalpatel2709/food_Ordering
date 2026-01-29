@@ -330,6 +330,23 @@ const payForItem = asyncHandler(async (req, res) => {
 
   await order.save();
 
+  // ==================== CASH REGISTER INTEGRATION ====================
+  const paymentMethod = method || PAYMENT_METHODS.CASH;
+  if (paymentMethod === PAYMENT_METHODS.CASH) {
+    try {
+      await recordCashSale(
+        req.restaurantDb,
+        req.restaurantId,
+        Number(amount),
+        order._id,
+        req.user,
+        req.body.cashRegisterId,
+      );
+    } catch (error) {
+      console.error("Error recording cash sale:", error);
+    }
+  }
+
   res.status(200).json({
     status: "success",
     message: "Item payment processed",
