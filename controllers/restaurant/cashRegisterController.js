@@ -22,7 +22,7 @@ const createRegister = asyncHandler(async (req, res) => {
 
   const register = await CashRegister.create({
     name,
-    restaurantId: req.restaurantId,
+    restaurantId: `restaurant_${req.restaurantId}`,
     status: "closed",
   });
 

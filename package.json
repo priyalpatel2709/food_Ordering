@@ -7,6 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "start:pm2": "pm2 start index.js -i 0",
+    "stop:pm2": "pm2 stop index.js",
     "mcp": "node mcp-server.js"
   },
   "author": "",
@@ -36,6 +38,7 @@
     "multer": "^2.0.2",
     "node-cache": "^5.1.2",
     "node-cron": "^4.2.1",
+    "pm2": "^6.0.14",
     "socket.io": "^4.8.3",
     "winston": "^3.17.0",
     "xlsx": "^0.18.5"
